@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Golden Years Admin</title>
+<meta name="description" content="Unified admin dashboard for Golden Years Home Health and Golden Years Home Care WA.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b5394">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GY Admin">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --teal:#0b5394;--teal-600:#0a4a82;--teal-700:#073763;--teal-900:#041e4f;--teal-soft:#2f74b5;
+  --gold:#c6a256;--gold-deep:#a7842f;
+  --ink:#122236;--slate:#4a5b70;--slate-2:#8195aa;
+  --mist:#eef3f9;--mist-2:#f6f9fc;--line:#d7e1ec;--line-2:#e6ecf3;
+  --r-lg:16px;--r-xl:22px;
+  --shadow-xs:0 2px 6px rgba(10,30,60,.06);--shadow-sm:0 6px 20px rgba(10,30,60,.08);
+  --shadow-md:0 14px 40px rgba(10,30,60,.12);--shadow-lg:0 24px 60px rgba(10,30,60,.22);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --accent:var(--teal);--accent-700:var(--teal-700);--accent-900:var(--teal-900);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',sans-serif;color:var(--ink);background:var(--mist-2);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Playfair Display',serif;color:var(--teal-900);margin:0 0 8px;line-height:1.2}
+p{margin:0 0 12px;line-height:1.6;color:var(--slate)}
+a{color:var(--teal)}
+.screen{min-height:100vh;display:none;flex-direction:column}
+.screen.active{display:flex}
+.wrap{max-width:1100px;margin:0 auto;width:100%;padding:0 20px}
+.center{text-align:center}
+.eyebrow{display:block;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:10px}
+.gold-rule{border:none;height:3px;width:64px;background:var(--gold);border-radius:3px;margin:14px 0 22px}
+.gold-rule.center{margin-left:auto;margin-right:auto}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:50px;font-weight:600;font-size:.95rem;text-decoration:none;cursor:pointer;border:none;transition:all .25s var(--ease);font-family:inherit}
+.btn svg{width:17px;height:17px}
+.btn--primary{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(11,83,148,.28)}
+.btn--primary:hover{background:var(--accent-700);transform:translateY(-2px)}
+.btn--gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;box-shadow:0 8px 20px rgba(167,132,47,.3)}
+.btn--gold:hover{transform:translateY(-2px)}
+.btn--ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn--ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn--full{width:100%;justify-content:center}
+
+/* ===== Site picker ===== */
+.picker{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:radial-gradient(circle at 30% 20%,#0f2a4a,#081326 70%)}
+.picker__inner{max-width:920px;width:100%;text-align:center}
+.picker__logo{width:88px;height:88px;object-fit:contain;margin:0 auto 22px}
+.picker__title{color:#fff;font-size:clamp(1.7rem,4vw,2.4rem);margin-bottom:8px}
+.picker__sub{color:#a8c0da;font-size:1.02rem;margin-bottom:44px}
+.picker__grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:680px){.picker__grid{grid-template-columns:1fr}}
+.picker__card{background:#fff;border-radius:var(--r-xl);padding:36px 28px;box-shadow:var(--shadow-lg);cursor:pointer;transition:all .35s var(--ease);text-align:left;border:2px solid transparent}
+.picker__card:hover{transform:translateY(-6px);border-color:var(--gold)}
+.picker__card img{width:52px;height:52px;object-fit:contain;margin-bottom:16px}
+.picker__card h3{font-size:1.3rem;margin-bottom:6px}
+.picker__card p{font-size:.9rem;margin-bottom:0}
+.picker__card .tag{display:inline-block;margin-top:14px;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--mist);padding:5px 14px;border-radius:50px}
+
+/* ===== Password gate ===== */
+.gate{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:linear-gradient(160deg,var(--teal-900),var(--teal-700))}
+.gate__card{background:#fff;border-radius:var(--r-xl);padding:44px 36px;max-width:420px;width:100%;box-shadow:var(--shadow-lg);text-align:center}
+.gate__logo{width:64px;height:64px;object-fit:contain;margin:0 auto 18px}
+.gate__back{position:fixed;top:20px;left:20px;z-index:20}
+.field{margin-bottom:16px;text-align:left}
+.field label{display:block;font-size:.84rem;font-weight:600;color:var(--slate);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:.95rem;color:var(--ink);background:var(--mist-2)}
+.field input:focus{outline:none;border-color:var(--accent);background:#fff}
+.pw-wrap{position:relative}
+.pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:8px;display:grid;place-items:center;color:var(--slate)}
+.err{color:#c0392b;margin-top:10px;font-size:.88rem;display:none}
+
+/* ===== Dashboard ===== */
+.dash{flex:1;display:flex;flex-direction:column;background:var(--mist-2)}
+.dash__top{background:var(--accent-900);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:10;box-shadow:var(--shadow-sm)}
+.dash__brand{display:flex;align-items:center;gap:12px}
+.dash__brand img{width:38px;height:38px;object-fit:contain}
+.dash__brand div{font-family:'Playfair Display',serif;font-weight:700;font-size:1.1rem}
+.dash__brand span{display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-top:1px}
+.dash__actions{display:flex;gap:8px;align-items:center}
+.dash__actions .btn{padding:9px 16px;font-size:.84rem}
+.dash__body{flex:1;padding:24px 20px 60px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.tab{padding:10px 20px;border-radius:50px;background:#fff;border:1.5px solid var(--line);color:var(--slate);font-weight:600;font-size:.86rem;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pane{display:none}
+.pane.active{display:block}
+
+.row{background:#fff;border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;box-shadow:var(--shadow-xs);display:flex;gap:16px}
+.row__img{width:96px;height:72px;border-radius:10px;object-fit:cover;flex-shrink:0}
+.row__body{flex:1;min-width:0}
+.row h4{font-family:'Playfair Display',serif;font-size:1.1rem;margin:0 0 4px;color:var(--ink)}
+.row .meta{font-size:.85rem;color:var(--slate-2);margin-bottom:8px}
+.row .msg{font-size:.9rem;color:var(--ink);margin-bottom:8px}
+.detail-line{font-size:.84rem;color:var(--slate)}
+.detail-line strong{color:var(--ink)}
+.status{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:50px;margin-bottom:8px}
+.status--live{background:rgba(16,120,60,.12);color:#12703c}
+.status--draft{background:var(--mist);color:var(--teal-700)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.abtn{font-size:.82rem;font-weight:600;padding:8px 15px;border-radius:50px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center}
+.abtn:hover{border-color:var(--accent);color:var(--accent)}
+.abtn--go{background:var(--accent);color:#fff;border-color:var(--accent)}
+.abtn--warn:hover{border-color:#c0392b;color:#c0392b}
+.reply-box{margin-top:12px;display:none}
+.reply-box textarea{width:100%;min-height:90px;padding:12px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:.9rem}
+
+.empty{text-align:center;padding:60px 24px;background:#fff;border-radius:var(--r-lg);color:var(--slate);border:1px dashed var(--line)}
+.loading{text-align:center;padding:60px 0;color:var(--slate)}
+.spinner{width:38px;height:38px;border:3px solid var(--mist);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.formcard{background:#fff;border-radius:var(--r-lg);padding:24px;margin-bottom:26px;box-shadow:var(--shadow-xs);border:1px solid var(--line-2)}
+.formcard h3{font-size:1.15rem;margin-bottom:4px}
+.formnote{font-size:.85rem;color:var(--slate-2);margin-bottom:16px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.frow{grid-template-columns:1fr}}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--teal-900);color:#fff;padding:14px 26px;border-radius:50px;font-weight:600;font-size:.9rem;box-shadow:var(--shadow-lg);opacity:0;transition:all .4s var(--ease);z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Install banner ===== */
+.install-bar{position:fixed;left:0;right:0;bottom:0;z-index:5000;background:linear-gradient(135deg,var(--teal-900),var(--teal-700));color:#fff;padding:14px 18px;display:none;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 -10px 30px rgba(0,0,0,.3)}
+.install-bar.show{display:flex}
+.install-bar__txt{display:flex;align-items:center;gap:10px;font-size:.9rem;font-weight:600}
+.install-bar img{width:28px;height:28px;object-fit:contain}
+.install-bar__actions{display:flex;gap:8px}
+.install-bar .btn{padding:9px 18px;font-size:.83rem}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: SITE PICKER -->
+<div class="screen active" id="screen-picker">
+  <div class="picker">
+    <div class="picker__inner">
+      <img class="picker__logo" src="/icons/icon-512.png" alt="Golden Years">
+      <h1 class="picker__title">Golden Years Admin</h1>
+      <p class="picker__sub">Choose which site you'd like to manage.</p>
+      <div class="picker__grid">
+        <div class="picker__card" onclick="selectSite('main')">
+          <img src="/icons/icon-512.png" alt="">
+          <h3>Golden Years Home Health</h3>
+          <p>Skilled nursing, home health &amp; supported living — goldenyearshomehealthllc.com</p>
+          <span class="tag">Articles · Enquiries · Jobs · Applications</span>
+        </div>
+        <div class="picker__card" onclick="selectSite('hcwa')">
+          <img src="/icons/icon-512.png" alt="">
+          <h3>Golden Years Home Care WA</h3>
+          <p>Non-medical home care &amp; companionship — goldenyearshomecarewa.com</p>
+          <span class="tag">Leads &amp; Enquiries</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: PASSWORD GATE -->
+<div class="screen" id="screen-gate">
+  <button class="btn btn--ghost gate__back" onclick="goToPicker()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</button>
+  <div class="gate">
+    <div class="gate__card">
+      <img class="gate__logo" src="/icons/icon-512.png" alt="Golden Years">
+      <span class="eyebrow center" id="gateSiteLabel">Staff Only</span>
+      <h2>Enter Admin Password</h2>
+      <hr class="gold-rule center">
+      <div class="field">
+        <label for="pw">Password</label>
+        <div class="pw-wrap">
+          <input id="pw" type="password" style="padding-right:48px" onkeydown="if(event.key==='Enter')checkPw()">
+          <button type="button" class="pw-eye" onclick="togglePw()" aria-label="Show or hide password"><svg id="pwEye" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <button class="btn btn--primary btn--full" onclick="checkPw()">Enter Dashboard</button>
+      <p class="err" id="pwErr">Incorrect password. Please try again.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3A: MAIN SITE DASHBOARD -->
+<div class="screen" id="screen-main">
+  <div class="dash">
+    <div class="dash__top">
+      <div class="dash__brand"><img src="/icons/icon-512.png" alt=""><div>Golden Years<span>Home Health Admin</span></div></div>
+      <div class="dash__actions">
+        <a class="btn btn--ghost" href="https://goldenyearshomehealthllc.com" target="_blank" rel="noopener">View Site</a>
+        <button class="btn btn--ghost" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+    <div class="dash__body">
+      <div class="wrap">
+        <div class="tabs">
+          <button class="tab active" data-tab="m-articles" onclick="showTab('m','articles')">Articles</button>
+          <button class="tab" data-tab="m-enquiries" onclick="showTab('m','enquiries')">Enquiries</button>
+          <button class="tab" data-tab="m-jobs" onclick="showTab('m','jobs')">Jobs</button>
+          <button class="tab" data-tab="m-applications" onclick="showTab('m','applications')">Applications</button>
+        </div>
+
+        <!-- ARTICLES -->
+        <div class="pane active" id="pane-m-articles">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+            <p class="formnote" style="margin:0">Review drafts and approve them to publish live.</p>
+            <a class="btn btn--primary" href="https://goldenyearshomehealthllc.com/article" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Write an Article</a>
+          </div>
+          <div id="list-m-articles"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
+        <!-- ENQUIRIES -->
+        <div class="pane" id="pane-m-enquiries">
+          <div id="list-m-enquiries"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
+        <!-- JOBS -->
+        <div class="pane" id="pane-m-jobs">
+          <div class="formcard">
+            <h3 id="jobFormTitle">Add a New Job</h3>
+            <p class="formnote">Fields marked * are required. Appears on Careers immediately after saving.</p>
+            <input type="hidden" id="j-id">
+            <div class="field"><label>Job Title *</label><input id="j-title" type="text"></div>
+            <div class="frow">
+              <div class="field"><label>Category *</label><input id="j-category" type="text"></div>
+              <div class="field"><label>Location *</label><input id="j-location" type="text"></div>
+            </div>
+            <div class="frow">
+              <div class="field"><label>Compensation</label><input id="j-salary" type="text"></div>
+              <div class="field"><label>Reference No.</label><input id="j-reference" type="text"></div>
+            </div>
+            <div class="frow">
+              <div class="field"><label>Employment Type</label>
+                <select id="j-emptype"><option value="">Select…</option><option>Full-Time</option><option>Part-Time</option><option>PRN / As-Needed</option><option>Per Diem</option><option>Contract</option></select>
+              </div>
+              <div class="field"><label>Expected Schedule</label><input id="j-schedule" type="text"></div>
+            </div>
+            <div class="field"><label>Locations / Territories</label><input id="j-territories" type="text"></div>
+            <div class="field"><label>Short Summary *</label><textarea id="j-summary" style="min-height:70px"></textarea></div>
+            <div class="field"><label>About Us</label><textarea id="j-about" style="min-height:90px"></textarea></div>
+            <div class="field"><label>Position Overview *</label><textarea id="j-overview" style="min-height:100px"></textarea></div>
+            <div class="field"><label>Key Responsibilities (grouped)</label><textarea id="j-resp" style="min-height:140px" placeholder="Heading line, then dashes for bullets"></textarea></div>
+            <div class="field"><label>Essential Job Functions</label><textarea id="j-ef" placeholder="One per line"></textarea></div>
+            <div class="field"><label>Requirements</label><textarea id="j-req" placeholder="One per line"></textarea></div>
+            <div class="field"><label>Preferred Qualities</label><textarea id="j-pref" placeholder="One per line"></textarea></div>
+            <div class="field"><label>Benefits</label><textarea id="j-benefits" style="min-height:90px"></textarea></div>
+            <div class="field"><label>Equal Opportunity / WA Notice</label><textarea id="j-eeo" style="min-height:90px"></textarea></div>
+            <div class="field"><label>Card Image URL</label><input id="j-image" type="text"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn--primary" id="saveJobBtn" onclick="saveJob()" style="flex:1;min-width:150px;justify-content:center">Save Job</button>
+              <button class="btn btn--ghost" onclick="resetJobForm()" style="flex:1;min-width:120px;justify-content:center">Clear Form</button>
+            </div>
+          </div>
+          <h3 style="margin-bottom:14px">Current Postings</h3>
+          <div id="list-m-jobs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
+        <!-- APPLICATIONS -->
+        <div class="pane" id="pane-m-applications">
+          <div id="list-m-applications"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3B: HOME CARE WA DASHBOARD -->
+<div class="screen" id="screen-hcwa">
+  <div class="dash">
+    <div class="dash__top">
+      <div class="dash__brand"><img src="/icons/icon-512.png" alt=""><div>Golden Years<span>Home Care WA Admin</span></div></div>
+      <div class="dash__actions">
+        <a class="btn btn--ghost" href="https://goldenyearshomecarewa.com" target="_blank" rel="noopener">View Site</a>
+        <button class="btn btn--ghost" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+    <div class="dash__body">
+      <div class="wrap">
+        <div class="center" style="margin-bottom:24px">
+          <span class="eyebrow">Leads Dashboard</span>
+          <h2>Home Care WA — Leads</h2>
+          <hr class="gold-rule center">
+          <p style="max-width:520px;margin:0 auto">Every enquiry from the quick-form and contact page appears here.</p>
+        </div>
+        <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- INSTALL PROMPT BAR -->
+<div class="install-bar" id="installBar">
+  <div class="install-bar__txt"><img src="/icons/icon-512.png" alt="">Install this app for one-tap admin access anytime.</div>
+  <div class="install-bar__actions">
+    <button class="btn btn--gold" id="installBtn" onclick="doInstall()">Install App</button>
+    <button class="btn btn--ghost" onclick="dismissInstallBar()" style="color:#fff;border-color:rgba(255,255,255,.4)">Not Now</button>
+  </div>
+</div>
+
+<script>
+/* ===== Supabase configs for BOTH sites ===== */
+const CONFIGS = {
+  main: {
+    url: 'https://uldywugntkykeftuzxys.supabase.co',
+    key: 'sb_publishable_kCCHxG8VAO_APnGWxCgLDg_Wj6Vxjj7',
+    label: 'Golden Years Home Health'
+  },
+  hcwa: {
+    url: 'https://styzbftuzuqcnkwvwpgm.supabase.co',
+    key: 'sb_publishable_vgZaJznqe7aI_TJ8gV8ynw_UPgSsifR',
+    label: 'Golden Years Home Care WA'
+  }
+};
+const ADMIN_PW = 'GoldenYears2026';
+let CURRENT_SITE = null;
+let sb = null;
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtDate(d){try{return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})+' · '+new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+/* ===== Navigation flow ===== */
+function selectSite(site){
+  CURRENT_SITE = site;
+  try{sessionStorage.setItem('gy_admin_site', site);}catch(e){}
+  document.getElementById('gateSiteLabel').textContent = CONFIGS[site].label + ' — Staff Only';
+  showScreen('screen-gate');
+  document.getElementById('pw').focus();
+}
+function goToPicker(){
+  CURRENT_SITE = null;
+  try{sessionStorage.removeItem('gy_admin_site');sessionStorage.removeItem('gy_admin_auth');}catch(e){}
+  showScreen('screen-picker');
+}
+function togglePw(){
+  var inp=document.getElementById('pw'),eye=document.getElementById('pwEye');
+  if(inp.type==='password'){inp.type='text';eye.innerHTML='<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="3" x2="21" y2="21"/>';}
+  else{inp.type='password';eye.innerHTML='<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';}
+}
+function checkPw(){
+  if(document.getElementById('pw').value===ADMIN_PW){
+    try{sessionStorage.setItem('gy_admin_auth','1');}catch(e){}
+    enterDashboard(CURRENT_SITE);
+  }else{document.getElementById('pwErr').style.display='block';}
+}
+function signOut(){
+  try{sessionStorage.removeItem('gy_admin_auth');sessionStorage.removeItem('gy_admin_site');}catch(e){}
+  CURRENT_SITE=null; sb=null;
+  showScreen('screen-picker');
+}
+function enterDashboard(site){
+  CURRENT_SITE = site;
+  var cfg = CONFIGS[site];
+  sb = supabase.createClient(cfg.url, cfg.key);
+  if(site==='main'){ showScreen('screen-main'); loadAllMain(); }
+  else { showScreen('screen-hcwa'); loadHcwaLeads(); }
+}
+
+/* Restore session on load */
+(function restoreSession(){
+  try{
+    var site = sessionStorage.getItem('gy_admin_site');
+    var auth = sessionStorage.getItem('gy_admin_auth');
+    if(site && auth==='1'){
+      document.addEventListener('DOMContentLoaded', function(){ enterDashboard(site); });
+    } else if (site) {
+      document.addEventListener('DOMContentLoaded', function(){ selectSite(site); });
+    }
+  }catch(e){}
+})();
+
+function showTab(prefix,name){
+  ['articles','enquiries','jobs','applications'].forEach(function(t){
+    var pane=document.getElementById('pane-'+prefix+'-'+t);
+    var tab=document.querySelector('[data-tab="'+prefix+'-'+t+'"]');
+    if(pane) pane.classList.toggle('active', t===name);
+    if(tab) tab.classList.toggle('active', t===name);
+  });
+}
+function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); }
+
+/* ===== ARTICLES ===== */
+async function loadArticles(){
+  var box=document.getElementById('list-m-articles');
+  try{
+    var r=await sb.from('articles').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No articles yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(a){
+      var live=a.published;
+      var img=a.card_image?'<img class="row__img" src="'+esc(a.card_image)+'" alt="">':'';
+      return '<div class="row">'+img+'<div class="row__body"><span class="status '+(live?'status--live':'status--draft')+'">'+(live?'● Live':'○ Draft')+'</span><h4>'+esc(a.title)+'</h4><p class="meta">'+esc(a.subtitle||'')+' · '+fmtDate(a.created_at)+'</p><div class="actions">'+
+        (live?'<button class="abtn abtn--warn" onclick="setArticlePub(\''+a.id+'\',false)">Unpublish</button>':'<button class="abtn abtn--go" onclick="setArticlePub(\''+a.id+'\',true)">Approve &amp; Publish</button>')+
+        '<a class="abtn" href="https://goldenyearshomehealthllc.com/article?id='+a.id+'" target="_blank" rel="noopener">Preview</a>'+
+        '<button class="abtn abtn--warn" onclick="delArticle(\''+a.id+'\')">Delete</button></div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load articles.</p></div>';}
+}
+async function setArticlePub(id,val){try{var r=await sb.from('articles').update({published:val}).eq('id',id);if(r.error)throw r.error;toast(val?'Article published!':'Article unpublished.');loadArticles();}catch(e){toast('Update failed.');}}
+async function delArticle(id){if(!confirm('Delete this article permanently?'))return;try{var r=await sb.from('articles').delete().eq('id',id);if(r.error)throw r.error;toast('Article deleted.');loadArticles();}catch(e){toast('Delete failed.');}}
+
+/* ===== ENQUIRIES ===== */
+async function loadEnquiries(){
+  var box=document.getElementById('list-m-enquiries');
+  try{
+    var r=await sb.from('enquiries').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No enquiries yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(en){
+      var extra='';
+      if(en.details){try{var d=typeof en.details==='string'?JSON.parse(en.details):en.details;for(var k in d){if(d[k])extra+='<div class="detail-line"><strong>'+esc(k)+':</strong> '+esc(d[k])+'</div>';}}catch(e){}}
+      var mailto=en.email?'mailto:'+esc(en.email)+'?subject='+encodeURIComponent('Re: Your enquiry to Golden Years Home Health')+'&body='+encodeURIComponent('Hello '+(en.name||'')+',\n\nThank you for reaching out to Golden Years Home Health.\n\n'):'';
+      return '<div class="row"><div class="row__body"><span class="status '+(en.form_type==='Care Inquiry'?'status--live':'status--draft')+'">'+esc(en.form_type||'Enquiry')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delEnquiry(\''+en.id+'\')">Delete</button></div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load enquiries.</p></div>';}
+}
+async function delEnquiry(id){if(!confirm('Delete this enquiry?'))return;try{var r=await sb.from('enquiries').delete().eq('id',id);if(r.error)throw r.error;toast('Enquiry deleted.');loadEnquiries();}catch(e){toast('Delete failed.');}}
+
+
+/* ===== JOBS ===== */
+async function saveJob(){
+  var rec={
+    title:val('j-title'),category:val('j-category'),location:val('j-location'),
+    salary:val('j-salary'),reference:val('j-reference'),employment_type:val('j-emptype'),
+    schedule:val('j-schedule'),territories:val('j-territories'),summary:val('j-summary'),
+    about_us:val('j-about'),overview:val('j-overview'),responsibilities:val('j-resp'),
+    essential_functions:val('j-ef'),requirements:val('j-req'),preferred:val('j-pref'),
+    benefits:val('j-benefits'),eeo:val('j-eeo'),card_image:val('j-image'),
+    published:true,featured:true
+  };
+  if(!rec.title||!rec.category||!rec.location||!rec.summary){toast('Title, category, location, and summary are required.');return;}
+  if(!rec.overview){toast('Please add a Position Overview.');return;}
+  var id=val('j-id');
+  var btn=document.getElementById('saveJobBtn'); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    var res=id?await sb.from('jobs').update(rec).eq('id',id):await sb.from('jobs').insert([rec]);
+    if(res.error) throw res.error;
+    toast(id?'Job updated.':'Job posted — now live on Careers.');
+    resetJobForm(); loadJobsAdmin();
+  }catch(e){toast('Save failed: '+(e.message||'try again'));}
+  btn.disabled=false; btn.textContent='Save Job';
+}
+function val(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
+function resetJobForm(){
+  ['j-id','j-title','j-category','j-location','j-salary','j-reference','j-emptype','j-schedule','j-territories','j-summary','j-about','j-overview','j-resp','j-ef','j-req','j-pref','j-benefits','j-eeo','j-image'].forEach(function(id){setVal(id,'');});
+  document.getElementById('jobFormTitle').textContent='Add a New Job';
+  document.getElementById('saveJobBtn').textContent='Save Job';
+}
+async function loadJobsAdmin(){
+  var box=document.getElementById('list-m-jobs');
+  try{
+    var r=await sb.from('jobs').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No jobs posted yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(j){
+      return '<div class="row"><div class="row__body"><h4>'+esc(j.title)+'</h4><p class="meta">'+esc(j.category||'')+' · '+esc(j.location||'')+(j.salary?' · '+esc(j.salary):'')+'</p><div class="actions">'+
+        '<a class="abtn" href="https://goldenyearshomehealthllc.com/job?id='+j.id+'" target="_blank" rel="noopener">Preview</a>'+
+        '<button class="abtn" onclick=\'editJob('+JSON.stringify(j).replace(/'/g,"&#39;")+')\'>Edit</button>'+
+        '<button class="abtn abtn--warn" onclick="delJob(\''+j.id+'\')">Delete</button></div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load jobs.</p></div>';}
+}
+function editJob(j){
+  setVal('j-id',j.id); setVal('j-title',j.title); setVal('j-category',j.category); setVal('j-location',j.location);
+  setVal('j-salary',j.salary); setVal('j-reference',j.reference); setVal('j-emptype',j.employment_type);
+  setVal('j-schedule',j.schedule); setVal('j-territories',j.territories); setVal('j-summary',j.summary);
+  setVal('j-about',j.about_us); setVal('j-overview',j.overview); setVal('j-resp',j.responsibilities);
+  setVal('j-ef',j.essential_functions); setVal('j-req',j.requirements); setVal('j-pref',j.preferred);
+  setVal('j-benefits',j.benefits); setVal('j-eeo',j.eeo); setVal('j-image',j.card_image);
+  document.getElementById('jobFormTitle').textContent='Edit Job';
+  document.getElementById('saveJobBtn').textContent='Update Job';
+  document.getElementById('pane-m-jobs').scrollIntoView({behavior:'smooth'});
+}
+async function delJob(id){if(!confirm('Delete this job permanently?'))return;try{var r=await sb.from('jobs').delete().eq('id',id);if(r.error)throw r.error;toast('Job deleted.');loadJobsAdmin();}catch(e){toast('Delete failed.');}}
+
+/* ===== APPLICATIONS ===== */
+async function loadApplications(){
+  var box=document.getElementById('list-m-applications');
+  try{
+    var r=await sb.from('applications').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No applications yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(a){
+      return '<div class="row"><div class="row__body"><h4>'+esc(a.applicant_name)+' — <span style="color:var(--teal-soft);font-weight:600">'+esc(a.job_title||'')+'</span></h4><p class="meta">'+esc(a.email)+' · '+esc(a.phone)+(a.location?' · '+esc(a.location):'')+' · '+fmtDate(a.created_at)+'</p>'+(a.message?'<p class="msg">'+esc(a.message)+'</p>':'')+'<div class="actions">'+
+        (a.resume_url?'<a class="abtn abtn--go" href="'+esc(a.resume_url)+'" target="_blank" rel="noopener">Download Resume</a>':'')+
+        (a.filled_form_url?'<a class="abtn" href="'+esc(a.filled_form_url)+'" target="_blank" rel="noopener">Completed Form</a>':'')+
+        '<a class="abtn" href="mailto:'+esc(a.email)+'?subject='+encodeURIComponent('Your application to Golden Years Home Health')+'">Reply by Email</a>'+
+        '<button class="abtn abtn--warn" onclick="delApp(\''+a.id+'\')">Delete</button></div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load applications.</p></div>';}
+}
+async function delApp(id){if(!confirm('Delete this application?'))return;try{var r=await sb.from('applications').delete().eq('id',id);if(r.error)throw r.error;toast('Application deleted.');loadApplications();}catch(e){toast('Delete failed.');}}
+
+
+/* ===== HOME CARE WA LEADS ===== */
+async function loadHcwaLeads(){
+  var box=document.getElementById('list-hcwa-leads');
+  try{
+    var r=await sb.from('homecare_leads').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No leads yet. New quick-form and contact-page submissions will appear here.</p></div>';return;}
+    box.innerHTML=r.data.map(function(en){
+      var extra='';
+      if(en.details){try{var d=typeof en.details==='string'?JSON.parse(en.details):en.details;for(var k in d){if(d[k])extra+='<div class="detail-line"><strong>'+esc(k)+':</strong> '+esc(d[k])+'</div>';}}catch(e){}}
+      var mailto=en.email?'mailto:'+esc(en.email)+'?subject='+encodeURIComponent('Re: Your enquiry to Golden Years Home Care WA')+'&body='+encodeURIComponent('Hello '+(en.name||'')+',\n\nThank you for reaching out to Golden Years Home Care WA.\n\n'):'';
+      return '<div class="row"><div class="row__body"><span class="status '+(en.source_page==='Contact Page'?'status--live':'status--draft')+'">'+esc(en.source_page||'Lead')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delLead(\''+en.id+'\')">Delete</button></div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load leads.</p></div>';}
+}
+async function delLead(id){if(!confirm('Delete this lead?'))return;try{var r=await sb.from('homecare_leads').delete().eq('id',id);if(r.error)throw r.error;toast('Lead deleted.');loadHcwaLeads();}catch(e){toast('Delete failed.');}}
+
+/* ===== PWA INSTALL PROMPT (nags every load until installed) ===== */
+let deferredPrompt = null;
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredPrompt = e;
+  if(!isStandalone()) showInstallBar();
+});
+window.addEventListener('appinstalled', function(){
+  hideInstallBar();
+  deferredPrompt = null;
+});
+function showInstallBar(){
+  if(isStandalone()) return;
+  document.getElementById('installBar').classList.add('show');
+}
+function hideInstallBar(){
+  document.getElementById('installBar').classList.remove('show');
+}
+function dismissInstallBar(){
+  hideInstallBar();
+  // Intentionally NOT persisted — reappears next load per requirement
+}
+async function doInstall(){
+  if(!deferredPrompt){
+    // iOS / unsupported browsers: no native prompt exists — show manual instructions
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(isIOS){
+      alert('To install: tap the Share icon in Safari, then "Add to Home Screen".');
+    } else {
+      alert('Your browser doesn\'t support one-tap install. Look for "Install app" or "Add to Home Screen" in your browser menu.');
+    }
+    return;
+  }
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  hideInstallBar();
+}
+// Show the bar on every load if not installed (even if beforeinstallprompt already fired in a previous session)
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(!isStandalone()){
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if(isIOS || deferredPrompt) showInstallBar();
+    }
+  }, 1500);
+});
+
+/* Register service worker */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+</script>
+</body></html>
