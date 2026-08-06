@@ -419,7 +419,7 @@ async function loadEnquiries(){
       var extra='';
       if(en.details){try{var d=typeof en.details==='string'?JSON.parse(en.details):en.details;for(var k in d){if(d[k])extra+='<div class="detail-line"><strong>'+esc(k)+':</strong> '+esc(d[k])+'</div>';}}catch(e){}}
       var mailto=en.email?'mailto:'+esc(en.email)+'?subject='+encodeURIComponent('Re: Your enquiry to Golden Years Home Health')+'&body='+encodeURIComponent('Hello '+(en.name||'')+',\n\nThank you for reaching out to Golden Years Home Health.\n\n'):'';
-      return '<div class="row"><div class="row__body"><span class="status '+(en.form_type==='Care Inquiry'?'status--live':'status--draft')+'">'+esc(en.form_type||'Enquiry')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delEnquiry(\''+en.id+'\')">Delete</button></div></div></div>';
+      return '<div class="row"><div class="row__body"><span class="status '+(en.form_type==='Care Inquiry'?'status--live':'status--draft')+'">'+esc(en.form_type||'Enquiry')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'" target="_blank" rel="noopener">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delEnquiry(\''+en.id+'\')">Delete</button></div></div></div>';
     }).join('');
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load enquiries.</p></div>';}
 }
@@ -494,7 +494,7 @@ async function loadApplications(){
       return '<div class="row"><div class="row__body"><h4>'+esc(a.applicant_name)+' — <span style="color:var(--teal-soft);font-weight:600">'+esc(a.job_title||'')+'</span></h4><p class="meta">'+esc(a.email)+' · '+esc(a.phone)+(a.location?' · '+esc(a.location):'')+' · '+fmtDate(a.created_at)+'</p>'+(a.message?'<p class="msg">'+esc(a.message)+'</p>':'')+'<div class="actions">'+
         (a.resume_url?'<a class="abtn abtn--go" href="'+esc(a.resume_url)+'" target="_blank" rel="noopener">Download Resume</a>':'')+
         (a.filled_form_url?'<a class="abtn" href="'+esc(a.filled_form_url)+'" target="_blank" rel="noopener">Completed Form</a>':'')+
-        '<a class="abtn" href="mailto:'+esc(a.email)+'?subject='+encodeURIComponent('Your application to Golden Years Home Health')+'">Reply by Email</a>'+
+        '<a class="abtn" href="mailto:'+esc(a.email)+'?subject='+encodeURIComponent('Your application to Golden Years Home Health')+'" target="_blank" rel="noopener">Reply by Email</a>'+
         '<button class="abtn abtn--warn" onclick="delApp(\''+a.id+'\')">Delete</button></div></div></div>';
     }).join('');
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load applications.</p></div>';}
@@ -513,7 +513,7 @@ async function loadHcwaLeads(){
       var extra='';
       if(en.details){try{var d=typeof en.details==='string'?JSON.parse(en.details):en.details;for(var k in d){if(d[k])extra+='<div class="detail-line"><strong>'+esc(k)+':</strong> '+esc(d[k])+'</div>';}}catch(e){}}
       var mailto=en.email?'mailto:'+esc(en.email)+'?subject='+encodeURIComponent('Re: Your enquiry to Golden Years Home Care WA')+'&body='+encodeURIComponent('Hello '+(en.name||'')+',\n\nThank you for reaching out to Golden Years Home Care WA.\n\n'):'';
-      return '<div class="row"><div class="row__body"><span class="status '+(en.source_page==='Contact Page'?'status--live':'status--draft')+'">'+esc(en.source_page||'Lead')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delLead(\''+en.id+'\')">Delete</button></div></div></div>';
+      return '<div class="row"><div class="row__body"><span class="status '+(en.source_page==='Contact Page'?'status--live':'status--draft')+'">'+esc(en.source_page||'Lead')+'</span><h4>'+esc(en.name||'(no name)')+'</h4><p class="meta">'+esc(en.email||'')+(en.phone?' · '+esc(en.phone):'')+' · '+fmtDate(en.created_at)+'</p>'+(en.message?'<p class="msg">'+esc(en.message)+'</p>':'')+extra+'<div class="actions">'+(en.email?'<a class="abtn abtn--go" href="'+mailto+'" target="_blank" rel="noopener">Reply by Email</a>':'')+'<button class="abtn abtn--warn" onclick="delLead(\''+en.id+'\')">Delete</button></div></div></div>';
     }).join('');
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load leads.</p></div>';}
 }
