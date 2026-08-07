@@ -204,6 +204,7 @@ a{color:var(--teal)}
           <button class="tab" data-tab="m-enquiries" onclick="showTab('m','enquiries')">Enquiries</button>
           <button class="tab" data-tab="m-jobs" onclick="showTab('m','jobs')">Jobs</button>
           <button class="tab" data-tab="m-applications" onclick="showTab('m','applications')">Applications</button>
+          <button class="tab" data-tab="m-reviews" onclick="showTab('m','reviews')">Reviews</button>
         </div>
 
         <!-- ARTICLES -->
@@ -265,6 +266,12 @@ a{color:var(--teal)}
         <div class="pane" id="pane-m-applications">
           <div id="list-m-applications"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
+
+        <!-- REVIEWS -->
+        <div class="pane" id="pane-m-reviews">
+          <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
+          <div id="list-m-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -283,12 +290,21 @@ a{color:var(--teal)}
     <div class="dash__body">
       <div class="wrap">
         <div class="center" style="margin-bottom:24px">
-          <span class="eyebrow">Leads Dashboard</span>
-          <h2>Home Care WA — Leads</h2>
+          <span class="eyebrow">Home Care WA Admin</span>
+          <h2>Leads &amp; Reviews</h2>
           <hr class="gold-rule center">
-          <p style="max-width:520px;margin:0 auto">Every enquiry from the quick-form and contact page appears here.</p>
         </div>
-        <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        <div class="tabs">
+          <button class="tab active" data-tab="h-leads" onclick="showTab('h','leads')">Leads</button>
+          <button class="tab" data-tab="h-reviews" onclick="showTab('h','reviews')">Reviews</button>
+        </div>
+        <div class="pane active" id="pane-h-leads">
+          <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+        <div class="pane" id="pane-h-reviews">
+          <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
+          <div id="list-h-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -362,7 +378,7 @@ function enterDashboard(site){
   var cfg = CONFIGS[site];
   sb = supabase.createClient(cfg.url, cfg.key);
   if(site==='main'){ showScreen('screen-main'); loadAllMain(); }
-  else { showScreen('screen-hcwa'); loadHcwaLeads(); }
+  else { showScreen('screen-hcwa'); loadHcwaLeads(); loadReviews('h'); }
 }
 
 /* Restore session on load */
@@ -379,14 +395,14 @@ function enterDashboard(site){
 })();
 
 function showTab(prefix,name){
-  ['articles','enquiries','jobs','applications'].forEach(function(t){
-    var pane=document.getElementById('pane-'+prefix+'-'+t);
-    var tab=document.querySelector('[data-tab="'+prefix+'-'+t+'"]');
+  document.querySelectorAll('[data-tab^="'+prefix+'-"]').forEach(function(tab){
+    var t = tab.getAttribute('data-tab').slice(prefix.length+1);
+    var pane = document.getElementById('pane-'+prefix+'-'+t);
     if(pane) pane.classList.toggle('active', t===name);
-    if(tab) tab.classList.toggle('active', t===name);
+    tab.classList.toggle('active', t===name);
   });
 }
-function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); }
+function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); loadReviews('m'); }
 
 /* ===== ARTICLES ===== */
 async function loadArticles(){
@@ -484,34 +500,6 @@ function editJob(j){
 async function delJob(id){if(!confirm('Delete this job permanently?'))return;try{var r=await sb.from('jobs').delete().eq('id',id);if(r.error)throw r.error;toast('Job deleted.');loadJobsAdmin();}catch(e){toast('Delete failed.');}}
 
 /* ===== APPLICATIONS ===== */
-function extractStoragePath(value){
-  if(!value) return null;
-  var pubMarker = '/public/resumes/';
-  var idx = value.indexOf(pubMarker);
-  if(idx !== -1) return decodeURIComponent(value.slice(idx + pubMarker.length));
-  var signMarker = '/sign/resumes/';
-  var sidx = value.indexOf(signMarker);
-  if(sidx !== -1){
-    var after = value.slice(sidx + signMarker.length);
-    return decodeURIComponent(after.split('?')[0]);
-  }
-  if(value.indexOf('http')===0) return null;
-  return value;
-}
-async function openSignedResume(rawValue, btnEl){
-  var path = extractStoragePath(rawValue);
-  if(!path){ toast('Could not resolve file location.'); return; }
-  var originalText = btnEl.textContent;
-  btnEl.textContent = 'Preparing…';
-  try{
-    var r = await sb.storage.from('resumes').createSignedUrl(path, 3600);
-    if(r.error || !r.data){ throw r.error || new Error('no data'); }
-    window.open(r.data.signedUrl, '_blank', 'noopener');
-  }catch(e){
-    toast('Could not open file — it may have been removed.');
-  }
-  btnEl.textContent = originalText;
-}
 async function loadApplications(){
   var box=document.getElementById('list-m-applications');
   try{
@@ -520,8 +508,8 @@ async function loadApplications(){
     if(!r.data.length){box.innerHTML='<div class="empty"><p>No applications yet.</p></div>';return;}
     box.innerHTML=r.data.map(function(a){
       return '<div class="row"><div class="row__body"><h4>'+esc(a.applicant_name)+' — <span style="color:var(--teal-soft);font-weight:600">'+esc(a.job_title||'')+'</span></h4><p class="meta">'+esc(a.email)+' · '+esc(a.phone)+(a.location?' · '+esc(a.location):'')+' · '+fmtDate(a.created_at)+'</p>'+(a.message?'<p class="msg">'+esc(a.message)+'</p>':'')+'<div class="actions">'+
-        (a.resume_url?'<button class="abtn abtn--go" onclick=\'openSignedResume('+JSON.stringify(a.resume_url)+',this)\'>Download Resume</button>':'')+
-        (a.filled_form_url?'<button class="abtn" onclick=\'openSignedResume('+JSON.stringify(a.filled_form_url)+',this)\'>Completed Form</button>':'')+
+        (a.resume_url?'<a class="abtn abtn--go" href="'+esc(a.resume_url)+'" target="_blank" rel="noopener">Download Resume</a>':'')+
+        (a.filled_form_url?'<a class="abtn" href="'+esc(a.filled_form_url)+'" target="_blank" rel="noopener">Completed Form</a>':'')+
         '<a class="abtn" href="mailto:'+esc(a.email)+'?subject='+encodeURIComponent('Your application to Golden Years Home Health')+'" target="_blank" rel="noopener">Reply by Email</a>'+
         '<button class="abtn abtn--warn" onclick="delApp(\''+a.id+'\')">Delete</button></div></div></div>';
     }).join('');
@@ -546,6 +534,35 @@ async function loadHcwaLeads(){
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load leads.</p></div>';}
 }
 async function delLead(id){if(!confirm('Delete this lead?'))return;try{var r=await sb.from('homecare_leads').delete().eq('id',id);if(r.error)throw r.error;toast('Lead deleted.');loadHcwaLeads();}catch(e){toast('Delete failed.');}}
+
+/* ===== REVIEWS / TESTIMONIALS ===== */
+function starsDisplay(n){
+  var out='';
+  for(var i=0;i<5;i++){ out += (i<n ? '★' : '☆'); }
+  return out;
+}
+async function loadReviews(prefix){
+  var box=document.getElementById('list-'+prefix+'-reviews');
+  if(!box) return;
+  try{
+    var r=await sb.from('testimonials').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No reviews yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(t){
+      var live=t.published;
+      return '<div class="row"><div class="row__body"><span class="status '+(live?'status--live':'status--draft')+'">'+(live?'● Published':'○ Pending Approval')+'</span>'+
+        '<h4>'+esc(t.reviewer_name)+' <span style="color:var(--gold-deep);font-weight:600">'+starsDisplay(t.rating)+'</span></h4>'+
+        '<p class="meta">'+esc(t.relationship||'')+' · '+fmtDate(t.created_at)+'</p>'+
+        '<p class="msg">"'+esc(t.review_text)+'"</p>'+
+        '<div class="actions">'+
+          (live?'<button class="abtn abtn--warn" onclick="setReviewPub(\''+t.id+'\',false,\''+prefix+'\')">Unpublish</button>':'<button class="abtn abtn--go" onclick="setReviewPub(\''+t.id+'\',true,\''+prefix+'\')">Approve &amp; Publish</button>')+
+          '<button class="abtn abtn--warn" onclick="delReview(\''+t.id+'\',\''+prefix+'\')">Delete</button>'+
+        '</div></div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load reviews. Make sure the testimonials table exists.</p></div>';}
+}
+async function setReviewPub(id,val,prefix){try{var r=await sb.from('testimonials').update({published:val}).eq('id',id);if(r.error)throw r.error;toast(val?'Review published — now live!':'Review unpublished.');loadReviews(prefix);}catch(e){toast('Update failed.');}}
+async function delReview(id,prefix){if(!confirm('Delete this review permanently?'))return;try{var r=await sb.from('testimonials').delete().eq('id',id);if(r.error)throw r.error;toast('Review deleted.');loadReviews(prefix);}catch(e){toast('Delete failed.');}}
 
 /* ===== PWA INSTALL PROMPT (nags every load until installed) ===== */
 let deferredPrompt = null;
