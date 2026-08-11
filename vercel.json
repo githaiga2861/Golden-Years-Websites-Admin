@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/generate-article?site=main", "schedule": "0 13 * * *" },
+    { "path": "/api/generate-article?site=hcwa", "schedule": "10 13 * * *" }
+  ]
+}
