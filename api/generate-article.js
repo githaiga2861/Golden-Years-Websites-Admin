@@ -139,7 +139,7 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
         subtitle: article.subtitle || '',
         body: article.body,
         author: info.author,
-        published: false
+        published: true
       })
     });
 
