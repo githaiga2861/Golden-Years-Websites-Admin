@@ -99,12 +99,13 @@ module.exports = async function handler(req, res) {
       headers: {
         'content-type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31'
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 350,
-        system: SYSTEM_PROMPTS[site],
+        max_tokens: 280,
+        system: [{ type: 'text', text: SYSTEM_PROMPTS[site], cache_control: { type: 'ephemeral' } }],
         messages: trimmedMessages
       })
     });
