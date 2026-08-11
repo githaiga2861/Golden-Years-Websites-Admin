@@ -98,8 +98,22 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }],
+        tools: [{
+          name: 'save_article',
+          description: 'Save the finished blog article.',
+          input_schema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'The article title.' },
+              subtitle: { type: 'string', description: 'A one-sentence subtitle/summary.' },
+              body: { type: 'string', description: 'The full article body as simple HTML using only <p>, <h3>, <ul>, <li>, <strong> tags.' }
+            },
+            required: ['title', 'subtitle', 'body']
+          }
+        }],
+        tool_choice: { type: 'tool', name: 'save_article' }
       })
     });
 
@@ -110,16 +124,14 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
     }
 
     const claudeData = await claudeRes.json();
-    let raw = (claudeData.content && claudeData.content[0] && claudeData.content[0].text) || '';
-    raw = raw.trim().replace(/^```json\s*/i, '').replace(/```$/,'').trim();
+    const toolBlock = (claudeData.content || []).find(b => b.type === 'tool_use' && b.name === 'save_article');
 
-    let article;
-    try {
-      article = JSON.parse(raw);
-    } catch (e) {
-      console.error('Failed to parse article JSON:', raw.slice(0, 300));
-      return res.status(502).json({ error: 'Model did not return valid article JSON.' });
+    if (!toolBlock || !toolBlock.input) {
+      console.error('No tool_use block in response:', JSON.stringify(claudeData).slice(0, 500));
+      return res.status(502).json({ error: 'Model did not return a structured article.' });
     }
+
+    const article = toolBlock.input;
 
     if (!article.title || !article.body) {
       return res.status(502).json({ error: 'Generated article missing required fields.' });
