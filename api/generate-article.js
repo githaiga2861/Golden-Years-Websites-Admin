@@ -48,6 +48,35 @@ const SITE_INFO = {
   }
 };
 
+// Curated, pre-verified Unsplash photos so every auto-generated article
+// gets a real, relevant image — never an empty card.
+const CARD_IMAGES = {
+  main: [
+    'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1573497491208-6b1acb260507?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=1200&q=80'
+  ],
+  hcwa: [
+    'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=1200&q=80'
+  ]
+};
+
+function pickCardImage(site, recentImages){
+  var pool = CARD_IMAGES[site] || CARD_IMAGES.main;
+  var unused = pool.filter(function(url){ return recentImages.indexOf(url) === -1; });
+  var choices = unused.length ? unused : pool; // if all recently used, just cycle again
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
 module.exports = async function handler(req, res) {
   // Only Vercel Cron (or someone with the secret) may trigger this
   const authHeader = req.headers['authorization'] || '';
@@ -60,13 +89,15 @@ module.exports = async function handler(req, res) {
   const info = SITE_INFO[site];
 
   try {
-    // 1) Pull recent article titles to avoid repeating topics
+    // 1) Pull recent article titles + images (avoid repeating topics AND images)
     const recentRes = await fetch(
-      `${cfg.url}/rest/v1/articles?select=title&order=created_at.desc&limit=15`,
+      `${cfg.url}/rest/v1/articles?select=title,card_image&order=created_at.desc&limit=15`,
       { headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}` } }
     );
     const recentArticles = recentRes.ok ? await recentRes.json() : [];
     const recentTitles = recentArticles.map(a => a.title).join('; ') || 'none yet';
+    const recentImages = recentArticles.map(a => a.card_image).filter(Boolean);
+    const chosenImage = pickCardImage(site, recentImages);
 
     // 2) Pick a topic seed not obviously already covered
     const seeds = TOPIC_SEEDS[site];
@@ -151,6 +182,7 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
         subtitle: article.subtitle || '',
         body: article.body,
         author: info.author,
+        card_image: chosenImage,
         published: true
       })
     });
