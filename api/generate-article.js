@@ -122,7 +122,7 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
 
     // Gemini structured output: responseSchema forces valid JSON back,
     // the same guarantee tool-calling gave us before.
-    const MODEL = 'gemini-2.0-flash';
+    const MODEL = 'gemini-3.6-flash';
     const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
     const genRes = await fetch(ENDPOINT, {

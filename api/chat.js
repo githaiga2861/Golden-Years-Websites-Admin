@@ -133,7 +133,7 @@ module.exports = async function handler(req, res) {
     parts: [{ text: String(m.content || '').slice(0, 1500) }]
   }));
 
-  const MODEL = 'gemini-2.0-flash';
+  const MODEL = 'gemini-3.6-flash';
   const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
   try {
