@@ -126,37 +126,45 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing messages.' });
   }
 
-  // Cap conversation length sent to the model (keeps cost predictable)
+  // Cap conversation length sent to the model (keeps cost predictable).
+  // Gemini uses 'model' rather than 'assistant' for the AI's turns.
   const trimmedMessages = messages.slice(-10).map(m => ({
-    role: m.role === 'assistant' ? 'assistant' : 'user',
-    content: String(m.content || '').slice(0, 1500)
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: String(m.content || '').slice(0, 1500) }]
   }));
 
+  const MODEL = 'gemini-2.0-flash';
+  const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
   try {
-    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
+    const apiRes = await fetch(ENDPOINT, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'prompt-caching-2024-07-31'
-      },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 280,
-        system: [{ type: 'text', text: SYSTEM_PROMPTS[site], cache_control: { type: 'ephemeral' } }],
-        messages: trimmedMessages
+        system_instruction: { parts: [{ text: SYSTEM_PROMPTS[site] }] },
+        contents: trimmedMessages,
+        generationConfig: {
+          maxOutputTokens: 400,
+          temperature: 0.7
+        }
       })
     });
 
     if (!apiRes.ok) {
       const errText = await apiRes.text();
-      console.error('Anthropic API error:', apiRes.status, errText);
+      console.error('Gemini API error:', apiRes.status, errText);
       return res.status(502).json({ error: 'Our assistant is having trouble right now — please call (206) 717-1234.' });
     }
 
     const data = await apiRes.json();
-    const reply = (data.content && data.content[0] && data.content[0].text) || "Sorry, I didn't catch that — could you rephrase?";
+    const reply =
+      (data.candidates &&
+       data.candidates[0] &&
+       data.candidates[0].content &&
+       data.candidates[0].content.parts &&
+       data.candidates[0].content.parts[0] &&
+       data.candidates[0].content.parts[0].text) ||
+      "Sorry, I didn't catch that — could you rephrase?";
     return res.status(200).json({ reply });
 
   } catch (e) {

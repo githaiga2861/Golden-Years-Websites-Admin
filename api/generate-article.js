@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
     const seeds = TOPIC_SEEDS[site];
     const topic = seeds[Math.floor(Math.random() * seeds.length)];
 
-    // 3) Ask Claude to write the article
+    // 3) Ask the model to write the article
     const prompt = `Write one original, helpful blog article for ${info.name}, ${info.voice}.
 
 Suggested topic direction: "${topic}" — but feel free to give it a fresh, specific angle.
@@ -120,49 +120,60 @@ Requirements:
 Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fences:
 {"title": "...", "subtitle": "...", "body": "<p>...</p>..."}`;
 
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+    // Gemini structured output: responseSchema forces valid JSON back,
+    // the same guarantee tool-calling gave us before.
+    const MODEL = 'gemini-2.0-flash';
+    const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+    const genRes = await fetch(ENDPOINT, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-5',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: prompt }],
-        tools: [{
-          name: 'save_article',
-          description: 'Save the finished blog article.',
-          input_schema: {
-            type: 'object',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 3000,
+          temperature: 0.9,
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
             properties: {
-              title: { type: 'string', description: 'The article title.' },
-              subtitle: { type: 'string', description: 'A one-sentence subtitle/summary.' },
-              body: { type: 'string', description: 'The full article body as simple HTML using only <p>, <h3>, <ul>, <li>, <strong> tags.' }
+              title: { type: 'STRING' },
+              subtitle: { type: 'STRING' },
+              body: { type: 'STRING' }
             },
             required: ['title', 'subtitle', 'body']
           }
-        }],
-        tool_choice: { type: 'tool', name: 'save_article' }
+        }
       })
     });
 
-    if (!claudeRes.ok) {
-      const errText = await claudeRes.text();
-      console.error('Anthropic API error (article gen):', claudeRes.status, errText);
+    if (!genRes.ok) {
+      const errText = await genRes.text();
+      console.error('Gemini API error (article gen):', genRes.status, errText);
       return res.status(502).json({ error: 'Article generation failed at the model call.' });
     }
 
-    const claudeData = await claudeRes.json();
-    const toolBlock = (claudeData.content || []).find(b => b.type === 'tool_use' && b.name === 'save_article');
+    const genData = await genRes.json();
+    const rawText =
+      (genData.candidates &&
+       genData.candidates[0] &&
+       genData.candidates[0].content &&
+       genData.candidates[0].content.parts &&
+       genData.candidates[0].content.parts[0] &&
+       genData.candidates[0].content.parts[0].text) || '';
 
-    if (!toolBlock || !toolBlock.input) {
-      console.error('No tool_use block in response:', JSON.stringify(claudeData).slice(0, 500));
+    let article;
+    try {
+      article = JSON.parse(rawText);
+    } catch (e) {
+      console.error('Could not parse article JSON:', rawText.slice(0, 400));
       return res.status(502).json({ error: 'Model did not return a structured article.' });
     }
 
-    const article = toolBlock.input;
+    if (!article || !article.title || !article.body) {
+      console.error('Article missing required fields:', JSON.stringify(article).slice(0, 300));
+      return res.status(502).json({ error: 'Model did not return a structured article.' });
+    }
 
     if (!article.title || !article.body) {
       return res.status(502).json({ error: 'Generated article missing required fields.' });
