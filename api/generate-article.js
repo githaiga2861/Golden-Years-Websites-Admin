@@ -131,7 +131,8 @@ Respond with ONLY valid JSON in this exact shape, nothing else, no markdown fenc
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
-          maxOutputTokens: 3000,
+          thinkingConfig: { thinkingLevel: 'low' },
+          maxOutputTokens: 8000,
           temperature: 0.9,
           responseMimeType: 'application/json',
           responseSchema: {

@@ -144,7 +144,8 @@ module.exports = async function handler(req, res) {
         system_instruction: { parts: [{ text: SYSTEM_PROMPTS[site] }] },
         contents: trimmedMessages,
         generationConfig: {
-          maxOutputTokens: 400,
+          thinkingConfig: { thinkingLevel: 'low' },
+          maxOutputTokens: 1200,
           temperature: 0.7
         }
       })
