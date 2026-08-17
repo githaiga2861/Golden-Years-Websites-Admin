@@ -205,6 +205,7 @@ a{color:var(--teal)}
           <button class="tab" data-tab="m-jobs" onclick="showTab('m','jobs')">Jobs</button>
           <button class="tab" data-tab="m-applications" onclick="showTab('m','applications')">Applications</button>
           <button class="tab" data-tab="m-reviews" onclick="showTab('m','reviews')">Reviews</button>
+          <button class="tab" data-tab="m-chats" onclick="showTab('m','chats')">Chats</button>
         </div>
 
         <!-- ARTICLES -->
@@ -268,6 +269,11 @@ a{color:var(--teal)}
         </div>
 
         <!-- REVIEWS -->
+        <div class="pane" id="pane-m-chats">
+          <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
+          <div id="list-m-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
         <div class="pane" id="pane-m-reviews">
           <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
           <div id="list-m-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
@@ -297,10 +303,16 @@ a{color:var(--teal)}
         <div class="tabs">
           <button class="tab active" data-tab="h-leads" onclick="showTab('h','leads')">Leads</button>
           <button class="tab" data-tab="h-reviews" onclick="showTab('h','reviews')">Reviews</button>
+          <button class="tab" data-tab="h-chats" onclick="showTab('h','chats')">Chats</button>
         </div>
         <div class="pane active" id="pane-h-leads">
           <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
+        <div class="pane" id="pane-h-chats">
+          <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
+          <div id="list-h-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
         <div class="pane" id="pane-h-reviews">
           <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
           <div id="list-h-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
@@ -378,7 +390,7 @@ function enterDashboard(site){
   var cfg = CONFIGS[site];
   sb = supabase.createClient(cfg.url, cfg.key);
   if(site==='main'){ showScreen('screen-main'); loadAllMain(); }
-  else { showScreen('screen-hcwa'); loadHcwaLeads(); loadReviews('h'); }
+  else { showScreen('screen-hcwa'); loadHcwaLeads(); loadReviews('h'); loadChats('h'); }
 }
 
 /* Restore session on load */
@@ -402,7 +414,7 @@ function showTab(prefix,name){
     tab.classList.toggle('active', t===name);
   });
 }
-function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); loadReviews('m'); }
+function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); loadReviews('m'); loadChats('m'); }
 
 /* ===== ARTICLES ===== */
 async function loadArticles(){
@@ -533,6 +545,31 @@ async function loadHcwaLeads(){
     }).join('');
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load leads.</p></div>';}
 }
+/* ===== CHAT TRANSCRIPTS ===== */
+async function loadChats(prefix){
+  var box=document.getElementById('list-'+prefix+'-chats');
+  if(!box) return;
+  try{
+    var r=await sb.from('chat_messages').select('*').order('created_at',{ascending:false}).limit(400);
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No chat conversations yet.</p></div>';return;}
+    var sessions={};
+    r.data.forEach(function(m){ (sessions[m.session_id]=sessions[m.session_id]||[]).push(m); });
+    box.innerHTML=Object.keys(sessions).map(function(sid){
+      var msgs=sessions[sid].slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
+      var body=msgs.map(function(m){
+        var who=m.role==='user'?'Visitor':'Assistant';
+        var col=m.role==='user'?'var(--teal-700)':'var(--slate)';
+        return '<div style="margin-bottom:8px"><strong style="color:'+col+'">'+who+':</strong> '+esc(m.content)+'</div>';
+      }).join('');
+      return '<div class="row"><div class="row__body">'+
+        '<p class="meta">'+fmtDate(msgs[0].created_at)+' · '+msgs.length+' messages</p>'+
+        '<div style="font-size:.9rem;line-height:1.5">'+body+'</div>'+
+      '</div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load chats. Make sure the chat_messages table exists.</p></div>';}
+}
+
 async function delLead(id){if(!confirm('Delete this lead?'))return;try{var r=await sb.from('homecare_leads').delete().eq('id',id);if(r.error)throw r.error;toast('Lead deleted.');loadHcwaLeads();}catch(e){toast('Delete failed.');}}
 
 /* ===== REVIEWS / TESTIMONIALS ===== */

@@ -2,6 +2,51 @@
 // Holds the Anthropic API key SERVER-SIDE only. Never exposed to the browser.
 // Both websites call this endpoint; it never talks to Anthropic client-side.
 
+// Supabase projects (one per site) — used to log conversations
+const SUPABASE_CONFIG = {
+  main: {
+    url: 'https://uldywugntkykeftuzxys.supabase.co',
+    key: 'sb_publishable_kCCHxG8VAO_APnGWxCgLDg_Wj6Vxjj7'
+  },
+  hcwa: {
+    url: 'https://styzbftuzuqcnkwvwpgm.supabase.co',
+    key: 'sb_publishable_vgZaJznqe7aI_TJ8gV8ynw_UPgSsifR'
+  }
+};
+
+// Log a completed exchange. Fire-and-forget: never blocks or breaks the reply.
+function logExchange(site, visitorId, sessionId, userText, botText) {
+  const cfg = SUPABASE_CONFIG[site];
+  if (!cfg || !visitorId || !sessionId) return;
+  const rows = [
+    { visitor_id: visitorId, session_id: sessionId, role: 'user', content: String(userText).slice(0, 4000) },
+    { visitor_id: visitorId, session_id: sessionId, role: 'assistant', content: String(botText).slice(0, 4000) }
+  ];
+  fetch(`${cfg.url}/rest/v1/chat_messages`, {
+    method: 'POST',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'content-type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify(rows)
+  }).catch(e => console.error('Chat log insert failed:', e));
+}
+
+// Purge anything older than 30 days. Runs occasionally rather than every
+// request, so it costs almost nothing.
+function maybePurgeOldChats(site) {
+  if (Math.random() > 0.02) return; // ~1 in 50 requests
+  const cfg = SUPABASE_CONFIG[site];
+  if (!cfg) return;
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  fetch(`${cfg.url}/rest/v1/chat_messages?created_at=lt.${cutoff}`, {
+    method: 'DELETE',
+    headers: { apikey: cfg.key, Authorization: `Bearer ${cfg.key}`, Prefer: 'return=minimal' }
+  }).catch(e => console.error('Chat log purge failed:', e));
+}
+
 const ALLOWED_ORIGINS = [
   'https://goldenyearshomehealthllc.com',
   'https://www.goldenyearshomehealthllc.com',
@@ -152,7 +197,7 @@ module.exports = async function handler(req, res) {
   }
   dailyCount++;
 
-  const { site, messages } = req.body || {};
+  const { site, messages, visitorId, sessionId } = req.body || {};
   if (!site || !SYSTEM_PROMPTS[site]) {
     return res.status(400).json({ error: 'Invalid or missing site parameter.' });
   }
@@ -208,6 +253,10 @@ module.exports = async function handler(req, res) {
        data.candidates[0].content.parts[0] &&
        data.candidates[0].content.parts[0].text) ||
       "Sorry, I didn't catch that — could you rephrase?";
+
+    logExchange(site, visitorId, sessionId, latestUserMsg, reply);
+    maybePurgeOldChats(site);
+
     return res.status(200).json({ reply });
 
   } catch (e) {
