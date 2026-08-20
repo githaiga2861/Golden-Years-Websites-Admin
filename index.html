@@ -206,6 +206,7 @@ a{color:var(--teal)}
           <button class="tab" data-tab="m-applications" onclick="showTab('m','applications')">Applications</button>
           <button class="tab" data-tab="m-reviews" onclick="showTab('m','reviews')">Reviews</button>
           <button class="tab" data-tab="m-chats" onclick="showTab('m','chats')">Chats</button>
+          <button class="tab" data-tab="m-email" onclick="showTab('m','email')">Email</button>
         </div>
 
         <!-- ARTICLES -->
@@ -269,6 +270,26 @@ a{color:var(--teal)}
         </div>
 
         <!-- REVIEWS -->
+        <div class="pane" id="pane-m-email">
+          <div class="formcard">
+            <h3>Send a Campaign</h3>
+            <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
+            <div class="field"><label>Subject *</label><input id="m-subject" type="text" placeholder="Care tips for this month"></div>
+            <div class="field"><label>Send To</label>
+              <select id="m-segment"><option value="">Everyone on the list</option></select>
+            </div>
+            <div class="field"><label>Email Body (simple HTML) *</label><textarea id="m-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn--ghost" onclick="draftWithAI('m','main')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
+              <button class="btn btn--ghost" onclick="sendTest('m','main')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
+              <button class="btn btn--primary" onclick="sendCampaign('m','main')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
+            </div>
+            <p id="m-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+          </div>
+          <h3 style="margin-bottom:14px">Subscribers</h3>
+          <div id="list-m-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
         <div class="pane" id="pane-m-chats">
           <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
           <div id="list-m-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
@@ -304,10 +325,31 @@ a{color:var(--teal)}
           <button class="tab active" data-tab="h-leads" onclick="showTab('h','leads')">Leads</button>
           <button class="tab" data-tab="h-reviews" onclick="showTab('h','reviews')">Reviews</button>
           <button class="tab" data-tab="h-chats" onclick="showTab('h','chats')">Chats</button>
+          <button class="tab" data-tab="h-email" onclick="showTab('h','email')">Email</button>
         </div>
         <div class="pane active" id="pane-h-leads">
           <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
+        <div class="pane" id="pane-h-email">
+          <div class="formcard">
+            <h3>Send a Campaign</h3>
+            <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
+            <div class="field"><label>Subject *</label><input id="h-subject" type="text" placeholder="Care tips for this month"></div>
+            <div class="field"><label>Send To</label>
+              <select id="h-segment"><option value="">Everyone on the list</option></select>
+            </div>
+            <div class="field"><label>Email Body (simple HTML) *</label><textarea id="h-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn--ghost" onclick="draftWithAI('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
+              <button class="btn btn--ghost" onclick="sendTest('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
+              <button class="btn btn--primary" onclick="sendCampaign('h','hcwa')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
+            </div>
+            <p id="h-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+          </div>
+          <h3 style="margin-bottom:14px">Subscribers</h3>
+          <div id="list-h-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+        </div>
+
         <div class="pane" id="pane-h-chats">
           <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
           <div id="list-h-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
@@ -390,7 +432,7 @@ function enterDashboard(site){
   var cfg = CONFIGS[site];
   sb = supabase.createClient(cfg.url, cfg.key);
   if(site==='main'){ showScreen('screen-main'); loadAllMain(); }
-  else { showScreen('screen-hcwa'); loadHcwaLeads(); loadReviews('h'); loadChats('h'); }
+  else { showScreen('screen-hcwa'); loadHcwaLeads(); loadReviews('h'); loadChats('h'); loadSubscribers('h'); }
 }
 
 /* Restore session on load */
@@ -414,7 +456,7 @@ function showTab(prefix,name){
     tab.classList.toggle('active', t===name);
   });
 }
-function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); loadReviews('m'); loadChats('m'); }
+function loadAllMain(){ loadArticles(); loadEnquiries(); loadJobsAdmin(); loadApplications(); loadReviews('m'); loadChats('m'); loadSubscribers('m'); }
 
 /* ===== ARTICLES ===== */
 async function loadArticles(){
@@ -568,6 +610,95 @@ async function loadChats(prefix){
       '</div></div>';
     }).join('');
   }catch(e){box.innerHTML='<div class="empty"><p>Could not load chats. Make sure the chat_messages table exists.</p></div>';}
+}
+
+/* ===== EMAIL MARKETING ===== */
+var CAMPAIGN_ENDPOINT='https://golden-years-websites-admin.vercel.app/api/send-campaign';
+var CRON_SECRET_FOR_ADMIN='';   // set once below via prompt, kept in memory only
+
+function needSecret(){
+  if(!CRON_SECRET_FOR_ADMIN){
+    CRON_SECRET_FOR_ADMIN = prompt('Enter your CRON_SECRET to authorise sending:') || '';
+  }
+  return CRON_SECRET_FOR_ADMIN;
+}
+
+async function loadSubscribers(prefix){
+  var box=document.getElementById('list-'+prefix+'-subs');
+  if(!box) return;
+  try{
+    var r=await sb.from('subscribers').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    var active=r.data.filter(function(x){return !x.unsubscribed;});
+    var sel=document.getElementById(prefix+'-segment');
+    if(sel){
+      var seen={};
+      r.data.forEach(function(x){ if(x.interest) seen[x.interest]=1; });
+      sel.innerHTML='<option value="">Everyone on the list ('+active.length+')</option>'+
+        Object.keys(seen).map(function(i){return '<option value="'+esc(i)+'">'+esc(i)+'</option>';}).join('');
+    }
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No subscribers yet.</p></div>';return;}
+    box.innerHTML='<p class="formnote" style="margin-bottom:12px"><strong>'+active.length+'</strong> active · '+(r.data.length-active.length)+' unsubscribed</p>'+
+      r.data.map(function(x){
+        return '<div class="row"><div class="row__body">'+
+          '<span class="status '+(x.unsubscribed?'status--draft':'status--live')+'">'+(x.unsubscribed?'Unsubscribed':'Active')+'</span>'+
+          '<h4>'+esc(x.name||'(no name)')+'</h4>'+
+          '<p class="meta">'+esc(x.email)+' · '+esc(x.interest||'General')+' · '+fmtDate(x.created_at)+'</p>'+
+        '</div></div>';
+      }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load subscribers. Make sure the subscribers table exists.</p></div>';}
+}
+
+async function draftWithAI(prefix, site){
+  var st=document.getElementById(prefix+'-status');
+  st.textContent='Drafting…';
+  try{
+    var arts=await sb.from('articles').select('title,subtitle').eq('published',true).order('created_at',{ascending:false}).limit(4);
+    var list=(arts.data||[]).map(function(a){return '- '+a.title+': '+(a.subtitle||'');}).join('\n');
+    var seg=document.getElementById(prefix+'-segment').value||'general';
+    var prompt='Write a short, warm marketing email for Golden Years, a home care and home health provider in Washington State. Audience segment: '+seg+'. Recent articles:\n'+list+'\n\nUse simple HTML (<p>, <strong>, <ul>, <li>) only. Address the reader as {{first_name}}. Keep it under 200 words, friendly and genuinely useful, not salesy. Do not include a signature, address, or unsubscribe text. Respond with only the HTML body.';
+    var r=await fetch('https://golden-years-websites-admin.vercel.app/api/chat',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({site:site,messages:[{role:'user',content:prompt}]})
+    });
+    var d=await r.json();
+    if(d.reply){
+      document.getElementById(prefix+'-body').value=d.reply.replace(/^```html\s*/i,'').replace(/```$/,'').trim();
+      st.textContent='Draft ready — review and edit before sending.';
+    } else { st.textContent='Could not draft: '+(d.error||'try again'); }
+  }catch(e){ st.textContent='Could not draft right now.'; }
+}
+
+async function sendTest(prefix, site){
+  var to=prompt('Send a test email to which address?');
+  if(!to) return;
+  await postCampaign(prefix, site, {testTo:to});
+}
+async function sendCampaign(prefix, site){
+  var n=document.getElementById(prefix+'-segment').selectedOptions[0].textContent;
+  if(!confirm('Send this campaign to: '+n+'?\n\nThis cannot be undone.')) return;
+  await postCampaign(prefix, site, {});
+}
+async function postCampaign(prefix, site, extra){
+  var st=document.getElementById(prefix+'-status');
+  var subject=document.getElementById(prefix+'-subject').value.trim();
+  var body=document.getElementById(prefix+'-body').value.trim();
+  if(!subject||!body){ st.textContent='Subject and body are both required.'; return; }
+  var secret=needSecret();
+  if(!secret){ st.textContent='Cancelled.'; return; }
+  st.textContent='Sending…';
+  try{
+    var payload=Object.assign({site:site,subject:subject,htmlBody:body,segment:document.getElementById(prefix+'-segment').value},extra);
+    var r=await fetch(CAMPAIGN_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+secret},body:JSON.stringify(payload)});
+    var d=await r.json();
+    if(d.ok){
+      st.textContent = d.test ? ('Test sent to '+d.sentTo) : ('Sent to '+d.sent+' subscriber(s).'+(d.failed?' '+d.failed+' failed.':''));
+      if(!d.test) loadSubscribers(prefix);
+    } else {
+      st.textContent='Failed: '+(d.error||'unknown error');
+      if(r.status===401) CRON_SECRET_FOR_ADMIN='';
+    }
+  }catch(e){ st.textContent='Failed to send.'; }
 }
 
 async function delLead(id){if(!confirm('Delete this lead?'))return;try{var r=await sb.from('homecare_leads').delete().eq('id',id);if(r.error)throw r.error;toast('Lead deleted.');loadHcwaLeads();}catch(e){toast('Delete failed.');}}
