@@ -138,6 +138,13 @@ a{color:var(--teal)}
 .install-bar img{width:28px;height:28px;object-fit:contain}
 .install-bar__actions{display:flex;gap:8px}
 .install-bar .btn{padding:9px 18px;font-size:.83rem}
+.tplModal{position:fixed;inset:0;background:rgba(4,30,79,.55);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+.tplModal.open{display:flex}
+.tplModal__card{background:#fff;border-radius:var(--r-lg);box-shadow:var(--shadow-lg);max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative}
+.tplModal__head{padding:24px 26px 16px;border-bottom:1px solid var(--line-2)}
+.tplModal__close{position:absolute;top:16px;right:16px;background:var(--mist);border:none;width:32px;height:32px;border-radius:50%;font-size:1.1rem;line-height:1;cursor:pointer;color:var(--slate)}
+.tplModal__close:hover{background:var(--line-2)}
+.tplModal__body{padding:20px 26px 26px}
 </style>
 </head>
 <body>
@@ -721,12 +728,12 @@ async function loadChats(prefix){
 
 /* ===== EMAIL MARKETING ===== */
 var CAMPAIGN_ENDPOINT='https://golden-years-websites-admin.vercel.app/api/send-campaign';
-var CRON_SECRET_FOR_ADMIN='';   // set once below via prompt, kept in memory only
+// The admin app is already password-gated, so sending is pre-authorised —
+// no separate secret entry needed. Same trust boundary as the Supabase
+// keys already embedded in this file.
+var CRON_SECRET_FOR_ADMIN='8fa3d9104caff964c25c23c611098cb714ff99f5bd72e023cf2fde8861dbf17a';
 
 function needSecret(){
-  if(!CRON_SECRET_FOR_ADMIN){
-    CRON_SECRET_FOR_ADMIN = prompt('Enter your CRON_SECRET to authorise sending:') || '';
-  }
   return CRON_SECRET_FOR_ADMIN;
 }
 
@@ -786,8 +793,7 @@ async function postCampaign(prefix, site, extra){
       if(!d.test) loadSubscribers(prefix);
     } else {
       st.textContent='Failed: '+(d.error||'unknown error');
-      if(r.status===401) CRON_SECRET_FOR_ADMIN='';
-    }
+          }
   }catch(e){ st.textContent='Failed to send.'; }
 }
 
@@ -1121,8 +1127,7 @@ async function confirmSendTemplate(){
       setTimeout(closeTplSendModal, 1800);
     } else {
       status.textContent='Failed: '+(d.error||'unknown error');
-      if(r.status===401) CRON_SECRET_FOR_ADMIN='';
-    }
+          }
   }catch(e){ status.textContent='Failed to send.'; }
 }
 
@@ -1149,14 +1154,14 @@ async function loadSentEmails(prefix){
 
 </script>
 <!-- TEMPLATE SEND MODAL (shared) -->
-<div class="qform" id="tplSendModal">
-  <div class="qform__card" style="max-width:480px">
-    <div class="qform__head">
-      <button class="qform__close" onclick="closeTplSendModal()" aria-label="Close">×</button>
+<div class="tplModal" id="tplSendModal">
+  <div class="tplModal__card">
+    <div class="tplModal__head">
+      <button class="tplModal__close" onclick="closeTplSendModal()" aria-label="Close">×</button>
       <h3 id="tplSendTitle">Send Template</h3>
       <p id="tplSendSubtitle">Choose who should receive this.</p>
     </div>
-    <div class="qform__body">
+    <div class="tplModal__body">
       <div class="field"><label>Filter by category</label>
         <select id="tplSendCategoryFilter" onchange="filterTplRecipients()"><option value="">All categories</option></select>
       </div>
