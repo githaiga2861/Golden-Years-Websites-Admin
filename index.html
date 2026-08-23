@@ -94,6 +94,8 @@ a{color:var(--teal)}
 .tab{padding:10px 20px;border-radius:50px;background:#fff;border:1.5px solid var(--line);color:var(--slate);font-weight:600;font-size:.86rem;cursor:pointer;transition:all .2s}
 .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .pane{display:none}
+.epane{display:none}
+.epane.active{display:block}
 .pane.active{display:block}
 
 .row{background:#fff;border:1px solid var(--line-2);border-radius:var(--r-lg);padding:20px;margin-bottom:14px;box-shadow:var(--shadow-xs);display:flex;gap:16px}
@@ -271,31 +273,71 @@ a{color:var(--teal)}
 
         <!-- REVIEWS -->
         <div class="pane" id="pane-m-email">
-          <div class="formcard">
-            <h3>Send a Campaign</h3>
-            <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
-            <div class="field"><label>Subject *</label><input id="m-subject" type="text" placeholder="Care tips for this month"></div>
-            <div class="field"><label>Send To</label>
-              <select id="m-segment"><option value="">Everyone on the list</option></select>
-            </div>
-            <div class="field"><label>Email Body (simple HTML) *</label><textarea id="m-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <button class="btn btn--ghost" onclick="draftWithAI('m','main')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
-              <button class="btn btn--ghost" onclick="sendTest('m','main')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
-              <button class="btn btn--primary" onclick="sendCampaign('m','main')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
-            </div>
-            <p id="m-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
-          </div>
-          <h3 style="margin-bottom:14px">Subscribers</h3>
-          <div id="list-m-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
-        </div>
+  <div class="tabs" style="margin-bottom:18px">
+    <button class="tab active" data-etab="m-campaign" onclick="showETab('m','campaign')">Campaign</button>
+    <button class="tab" data-etab="m-templates" onclick="showETab('m','templates')">Templates</button>
+    <button class="tab" data-etab="m-sent" onclick="showETab('m','sent')">Sent Emails</button>
+    <button class="tab" data-etab="m-subs" onclick="showETab('m','subs')">Subscribers</button>
+  </div>
 
-        <div class="pane" id="pane-m-chats">
-          <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
-          <div id="list-m-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
-        </div>
+  <!-- CAMPAIGN -->
+  <div class="epane active" id="epane-m-campaign">
+    <div class="formcard">
+      <h3>Send a Campaign</h3>
+      <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
+      <div class="field"><label>Subject *</label><input id="m-subject" type="text" placeholder="Care tips for this month"></div>
+      <div class="field"><label>Send To (segment)</label>
+        <select id="m-segment"><option value="">Everyone on the list</option></select>
+      </div>
+      <div class="field"><label>Draft for which categories? <span style="font-weight:400;color:var(--slate-2)">(used by "Draft with AI" to personalise the topic)</span></label>
+        <div id="m-ai-categories" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="field"><label>Email Body (simple HTML) *</label><textarea id="m-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn--ghost" onclick="draftWithAI('m','main')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
+        <button class="btn btn--ghost" onclick="sendTest('m','main')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
+        <button class="btn btn--primary" onclick="sendCampaign('m','main')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
+      </div>
+      <p id="m-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+    </div>
+  </div>
 
-        <div class="pane" id="pane-m-reviews">
+  <!-- TEMPLATES -->
+  <div class="epane" id="epane-m-templates">
+    <div class="formcard">
+      <h3 id="m-tpl-form-title">New Template</h3>
+      <p class="formnote">Give it a clear, descriptive title so it's obvious what it's for and who it goes to.</p>
+      <input type="hidden" id="m-tpl-id">
+      <div class="field"><label>Title *</label><input id="m-tpl-title" type="text" placeholder="Welcome — New General Enquiry"></div>
+      <div class="field"><label>Description <span style="font-weight:400;color:var(--slate-2)">(who this is for / when to use it)</span></label><input id="m-tpl-desc" type="text" placeholder="Send within a day of someone's first enquiry"></div>
+      <div class="field"><label>Suggested Category</label>
+        <select id="m-tpl-category"><option value="">Not specific</option></select>
+      </div>
+      <div class="field"><label>Subject *</label><input id="m-tpl-subject" type="text"></div>
+      <div class="field"><label>Email Body (simple HTML) *</label><textarea id="m-tpl-body" style="min-height:220px"></textarea></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn--primary" onclick="saveTemplate('m','main')" style="flex:1;justify-content:center">Save Template</button>
+        <button class="btn btn--ghost" onclick="resetTemplateForm('m')" style="flex:1;justify-content:center">Clear Form</button>
+      </div>
+      <p id="m-tpl-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+    </div>
+    <h3 style="margin-bottom:14px">Saved Templates</h3>
+    <div id="list-m-templates"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+
+  <!-- SENT EMAILS -->
+  <div class="epane" id="epane-m-sent">
+    <p class="formnote" style="margin-bottom:16px">Every email actually sent — manual campaigns, templates, and the automated 2-day nurture sends.</p>
+    <div id="list-m-sent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+
+  <!-- SUBSCRIBERS -->
+  <div class="epane" id="epane-m-subs">
+    <div id="list-m-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-m-reviews">
           <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
           <div id="list-m-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
@@ -331,31 +373,71 @@ a{color:var(--teal)}
           <div id="list-hcwa-leads"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
         <div class="pane" id="pane-h-email">
-          <div class="formcard">
-            <h3>Send a Campaign</h3>
-            <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
-            <div class="field"><label>Subject *</label><input id="h-subject" type="text" placeholder="Care tips for this month"></div>
-            <div class="field"><label>Send To</label>
-              <select id="h-segment"><option value="">Everyone on the list</option></select>
-            </div>
-            <div class="field"><label>Email Body (simple HTML) *</label><textarea id="h-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap">
-              <button class="btn btn--ghost" onclick="draftWithAI('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
-              <button class="btn btn--ghost" onclick="sendTest('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
-              <button class="btn btn--primary" onclick="sendCampaign('h','hcwa')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
-            </div>
-            <p id="h-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
-          </div>
-          <h3 style="margin-bottom:14px">Subscribers</h3>
-          <div id="list-h-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
-        </div>
+  <div class="tabs" style="margin-bottom:18px">
+    <button class="tab active" data-etab="h-campaign" onclick="showETab('h','campaign')">Campaign</button>
+    <button class="tab" data-etab="h-templates" onclick="showETab('h','templates')">Templates</button>
+    <button class="tab" data-etab="h-sent" onclick="showETab('h','sent')">Sent Emails</button>
+    <button class="tab" data-etab="h-subs" onclick="showETab('h','subs')">Subscribers</button>
+  </div>
 
-        <div class="pane" id="pane-h-chats">
-          <p class="formnote" style="margin-bottom:16px">Conversations visitors have had with the website assistant. Auto-deleted after 30 days.</p>
-          <div id="list-h-chats"><div class="loading"><div class="spinner"></div>Loading…</div></div>
-        </div>
+  <!-- CAMPAIGN -->
+  <div class="epane active" id="epane-h-campaign">
+    <div class="formcard">
+      <h3>Send a Campaign</h3>
+      <p class="formnote">Every email automatically includes your postal address and a working unsubscribe link, as the law requires. Use <strong>{{first_name}}</strong> anywhere in the body to personalise it.</p>
+      <div class="field"><label>Subject *</label><input id="h-subject" type="text" placeholder="Care tips for this month"></div>
+      <div class="field"><label>Send To (segment)</label>
+        <select id="h-segment"><option value="">Everyone on the list</option></select>
+      </div>
+      <div class="field"><label>Draft for which categories? <span style="font-weight:400;color:var(--slate-2)">(used by "Draft with AI" to personalise the topic)</span></label>
+        <div id="h-ai-categories" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="field"><label>Email Body (simple HTML) *</label><textarea id="h-body" style="min-height:200px" placeholder="&lt;p&gt;Hi {{first_name}}, here is what's new this month...&lt;/p&gt;"></textarea></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn--ghost" onclick="draftWithAI('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Draft with AI</button>
+        <button class="btn btn--ghost" onclick="sendTest('h','hcwa')" style="flex:1;min-width:140px;justify-content:center">Send Test to Me</button>
+        <button class="btn btn--primary" onclick="sendCampaign('h','hcwa')" style="flex:1;min-width:160px;justify-content:center">Send to List</button>
+      </div>
+      <p id="h-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+    </div>
+  </div>
 
-        <div class="pane" id="pane-h-reviews">
+  <!-- TEMPLATES -->
+  <div class="epane" id="epane-h-templates">
+    <div class="formcard">
+      <h3 id="h-tpl-form-title">New Template</h3>
+      <p class="formnote">Give it a clear, descriptive title so it's obvious what it's for and who it goes to.</p>
+      <input type="hidden" id="h-tpl-id">
+      <div class="field"><label>Title *</label><input id="h-tpl-title" type="text" placeholder="Welcome — New General Enquiry"></div>
+      <div class="field"><label>Description <span style="font-weight:400;color:var(--slate-2)">(who this is for / when to use it)</span></label><input id="h-tpl-desc" type="text" placeholder="Send within a day of someone's first enquiry"></div>
+      <div class="field"><label>Suggested Category</label>
+        <select id="h-tpl-category"><option value="">Not specific</option></select>
+      </div>
+      <div class="field"><label>Subject *</label><input id="h-tpl-subject" type="text"></div>
+      <div class="field"><label>Email Body (simple HTML) *</label><textarea id="h-tpl-body" style="min-height:220px"></textarea></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn--primary" onclick="saveTemplate('h','hcwa')" style="flex:1;justify-content:center">Save Template</button>
+        <button class="btn btn--ghost" onclick="resetTemplateForm('h')" style="flex:1;justify-content:center">Clear Form</button>
+      </div>
+      <p id="h-tpl-status" style="margin:14px 0 0;font-size:.88rem;color:var(--slate)"></p>
+    </div>
+    <h3 style="margin-bottom:14px">Saved Templates</h3>
+    <div id="list-h-templates"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+
+  <!-- SENT EMAILS -->
+  <div class="epane" id="epane-h-sent">
+    <p class="formnote" style="margin-bottom:16px">Every email actually sent — manual campaigns, templates, and the automated 2-day nurture sends.</p>
+    <div id="list-h-sent"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+
+  <!-- SUBSCRIBERS -->
+  <div class="epane" id="epane-h-subs">
+    <div id="list-h-subs"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+  </div>
+</div>
+
+<div class="pane" id="pane-h-reviews">
           <p class="formnote" style="margin-bottom:16px">Approve reviews to make them public. Unpublish or delete any review at any time.</p>
           <div id="list-h-reviews"><div class="loading"><div class="spinner"></div>Loading…</div></div>
         </div>
@@ -648,40 +730,21 @@ function needSecret(){
   return CRON_SECRET_FOR_ADMIN;
 }
 
-async function loadSubscribers(prefix){
-  var box=document.getElementById('list-'+prefix+'-subs');
-  if(!box) return;
-  try{
-    var r=await sb.from('subscribers').select('*').order('created_at',{ascending:false});
-    if(r.error) throw r.error;
-    var active=r.data.filter(function(x){return !x.unsubscribed;});
-    var sel=document.getElementById(prefix+'-segment');
-    if(sel){
-      var seen={};
-      r.data.forEach(function(x){ if(x.interest) seen[x.interest]=1; });
-      sel.innerHTML='<option value="">Everyone on the list ('+active.length+')</option>'+
-        Object.keys(seen).map(function(i){return '<option value="'+esc(i)+'">'+esc(i)+'</option>';}).join('');
-    }
-    if(!r.data.length){box.innerHTML='<div class="empty"><p>No subscribers yet.</p></div>';return;}
-    box.innerHTML='<p class="formnote" style="margin-bottom:12px"><strong>'+active.length+'</strong> active · '+(r.data.length-active.length)+' unsubscribed</p>'+
-      r.data.map(function(x){
-        return '<div class="row"><div class="row__body">'+
-          '<span class="status '+(x.unsubscribed?'status--draft':'status--live')+'">'+(x.unsubscribed?'Unsubscribed':'Active')+'</span>'+
-          '<h4>'+esc(x.name||'(no name)')+'</h4>'+
-          '<p class="meta">'+esc(x.email)+' · '+esc(x.interest||'General')+' · '+fmtDate(x.created_at)+'</p>'+
-        '</div></div>';
-      }).join('');
-  }catch(e){box.innerHTML='<div class="empty"><p>Could not load subscribers. Make sure the subscribers table exists.</p></div>';}
-}
 
 async function draftWithAI(prefix, site){
   var st=document.getElementById(prefix+'-status');
-  st.textContent='Drafting…';
+  var checked = Array.from(document.querySelectorAll('.'+prefix+'-aicat-cb:checked')).map(function(cb){return cb.value;});
+  if(!checked.length){
+    st.textContent='Please tick at least one category above first, so the draft is written for the right audience.';
+    var box=document.getElementById(prefix+'-ai-categories');
+    if(box) box.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  st.textContent='Drafting for: '+checked.join(', ')+'…';
   try{
     var arts=await sb.from('articles').select('title,subtitle').eq('published',true).order('created_at',{ascending:false}).limit(4);
     var list=(arts.data||[]).map(function(a){return '- '+a.title+': '+(a.subtitle||'');}).join('\n');
-    var seg=document.getElementById(prefix+'-segment').value||'general';
-    var prompt='Write a short, warm marketing email for Golden Years, a home care and home health provider in Washington State. Audience segment: '+seg+'. Recent articles:\n'+list+'\n\nUse simple HTML (<p>, <strong>, <ul>, <li>) only. Address the reader as {{first_name}}. Keep it under 200 words, friendly and genuinely useful, not salesy. Do not include a signature, address, or unsubscribe text. Respond with only the HTML body.';
+    var prompt='Write a short, warm marketing email for Golden Years, a home care and home health provider in Washington State. This email is specifically for subscribers in these categories: '+checked.join(', ')+'. Tailor the content and tone to genuinely fit that audience, not a generic blast. Recent articles for reference:\n'+list+'\n\nUse simple HTML (<p>, <strong>, <ul>, <li>) only. Address the reader as {{first_name}}. Keep it under 200 words, friendly and genuinely useful, not salesy. Do not include a signature, address, or unsubscribe text. Respond with only the HTML body.';
     var r=await fetch('https://golden-years-websites-admin.vercel.app/api/chat',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({site:site,messages:[{role:'user',content:prompt}]})
@@ -689,7 +752,9 @@ async function draftWithAI(prefix, site){
     var d=await r.json();
     if(d.reply){
       document.getElementById(prefix+'-body').value=d.reply.replace(/^```html\s*/i,'').replace(/```$/,'').trim();
-      st.textContent='Draft ready — review and edit before sending.';
+      var segSel=document.getElementById(prefix+'-segment');
+      if(segSel && checked.length===1){ segSel.value=checked[0]; }
+      st.textContent='Draft ready for '+checked.join(', ')+' — review and edit before sending.';
     } else { st.textContent='Could not draft: '+(d.error||'try again'); }
   }catch(e){ st.textContent='Could not draft right now.'; }
 }
@@ -814,5 +879,296 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
 }
+
+/* ===== EMAIL SUB-TABS ===== */
+function showETab(prefix, name){
+  ['campaign','templates','sent','subs'].forEach(function(t){
+    var pane = document.getElementById('epane-'+prefix+'-'+t);
+    var tab = document.querySelector('[data-etab="'+prefix+'-'+t+'"]');
+    if(pane) pane.classList.toggle('active', t===name);
+    if(tab) tab.classList.toggle('active', t===name);
+  });
+  if(name==='templates') loadTemplates(prefix);
+  if(name==='sent') loadSentEmails(prefix);
+  if(name==='subs') loadSubscribers(prefix);
+}
+
+var BASE_CATEGORIES = ['General','Care Inquiry','AFH Placement','Private Duty','Careers','Home Care'];
+
+async function loadSubscribers(prefix){
+  var box=document.getElementById('list-'+prefix+'-subs');
+  if(!box) return;
+  try{
+    var r=await sb.from('subscribers').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    var active=r.data.filter(function(x){return !x.unsubscribed;});
+
+    var cats={};
+    BASE_CATEGORIES.forEach(function(c){cats[c]=1;});
+    r.data.forEach(function(x){ if(x.category) cats[x.category]=1; else if(x.interest) cats[x.interest]=1; });
+    var catList = Object.keys(cats).sort();
+
+    var sel=document.getElementById(prefix+'-segment');
+    if(sel){
+      sel.innerHTML='<option value="">Everyone on the list ('+active.length+')</option>'+
+        catList.map(function(c){
+          var n=active.filter(function(x){return (x.category||x.interest)===c;}).length;
+          return '<option value="'+esc(c)+'">'+esc(c)+' ('+n+')</option>';
+        }).join('');
+    }
+
+    var aiBox=document.getElementById(prefix+'-ai-categories');
+    if(aiBox){
+      aiBox.innerHTML = catList.map(function(c){
+        var safeId = prefix+'-aicat-'+c.replace(/[^a-zA-Z0-9]/g,'');
+        return '<label style="display:inline-flex;align-items:center;gap:6px;background:var(--mist-2);border:1px solid var(--line-2);border-radius:50px;padding:6px 13px;font-size:.82rem;cursor:pointer"><input type="checkbox" value="'+esc(c)+'" id="'+safeId+'" class="'+prefix+'-aicat-cb" style="width:auto;margin:0">'+esc(c)+'</label>';
+      }).join('');
+    }
+
+    var tplCat=document.getElementById(prefix+'-tpl-category');
+    if(tplCat && !tplCat.dataset.filled){
+      tplCat.innerHTML='<option value="">Not specific</option>'+catList.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
+      tplCat.dataset.filled='1';
+    }
+
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No subscribers yet.</p></div>';return;}
+    box.innerHTML='<p class="formnote" style="margin-bottom:12px"><strong>'+active.length+'</strong> active &middot; '+(r.data.length-active.length)+' unsubscribed</p>'+
+      r.data.map(function(x){
+        var cat = x.category || x.interest || 'General';
+        var out = '<div class="row"><div class="row__body">';
+        out += '<span class="status '+(x.unsubscribed?'status--draft':'status--live')+'">'+(x.unsubscribed?'Unsubscribed':'Active')+'</span>';
+        out += '<h4>'+esc(x.name||'(no name)')+' <span style="font-weight:600;font-size:.78rem;color:var(--teal-700);background:var(--mist);padding:3px 10px;border-radius:50px;margin-left:6px">'+esc(cat)+'</span></h4>';
+        out += '<p class="meta">'+esc(x.email)+' &middot; '+fmtDate(x.created_at)+(x.source?' &middot; via '+esc(x.source):'')+'</p>';
+        if(x.best_contact_time) out += '<p class="detail-line"><strong>Best time to contact:</strong> '+esc(x.best_contact_time)+'</p>';
+        if(x.notes) out += '<p class="detail-line"><strong>Notes:</strong> '+esc(x.notes)+'</p>';
+        out += '<div class="actions"><button class="abtn" data-subid="'+esc(x.id)+'" data-subprefix="'+prefix+'" onclick="editSubscriber(this.dataset.subid,this.dataset.subprefix)">Edit Details</button></div>';
+        out += '</div></div>';
+        return out;
+      }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load subscribers.</p></div>';}
+}
+
+async function editSubscriber(id, prefix){
+  var cat = prompt('Category for this subscriber:', '');
+  if(cat===null) return;
+  var contactTime = prompt('Best time to contact them (optional):', '');
+  if(contactTime===null) contactTime='';
+  var notes = prompt('Notes (optional):', '');
+  if(notes===null) notes='';
+  try{
+    var r=await sb.from('subscribers').update({category:cat||'General', best_contact_time:contactTime, notes:notes}).eq('id',id);
+    if(r.error) throw r.error;
+    toast('Subscriber updated.');
+    loadSubscribers(prefix);
+  }catch(e){ toast('Update failed.'); }
+}
+
+/* ===== TEMPLATES ===== */
+async function loadTemplates(prefix){
+  var box=document.getElementById('list-'+prefix+'-templates');
+  if(!box) return;
+  try{
+    var r=await sb.from('email_templates').select('*').order('created_at',{ascending:false});
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No templates saved yet.</p></div>';return;}
+    box.innerHTML=r.data.map(function(t){
+      var out = '<div class="row"><div class="row__body">';
+      if(t.default_category) out += '<span class="status status--live">'+esc(t.default_category)+'</span>';
+      out += '<h4>'+esc(t.title)+'</h4>';
+      if(t.description) out += '<p class="meta">'+esc(t.description)+'</p>';
+      out += '<p class="msg" style="font-size:.82rem;color:var(--slate-2)">Subject: '+esc(t.subject)+'</p>';
+      out += '<div class="actions">';
+      out += '<button class="abtn abtn--go" data-tplid="'+esc(t.id)+'" data-tplprefix="'+prefix+'" onclick="openTplSendModal(this.dataset.tplid,this.dataset.tplprefix)">Share with Subscribers</button>';
+      out += '<button class="abtn" data-tplid="'+esc(t.id)+'" onclick="editTemplate(this.dataset.tplid)">Edit</button>';
+      out += '<button class="abtn abtn--warn" data-tplid="'+esc(t.id)+'" data-tplprefix="'+prefix+'" onclick="deleteTemplate(this.dataset.tplid,this.dataset.tplprefix)">Delete</button>';
+      out += '</div></div></div>';
+      return out;
+    }).join('');
+    window['__'+prefix+'templates'] = r.data;
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load templates. Make sure the email_templates table exists.</p></div>';}
+}
+
+function resetTemplateForm(prefix){
+  ['tpl-id','tpl-title','tpl-desc','tpl-subject','tpl-body'].forEach(function(f){
+    var el=document.getElementById(prefix+'-'+f); if(el) el.value='';
+  });
+  var cat=document.getElementById(prefix+'-tpl-category'); if(cat) cat.value='';
+  document.getElementById(prefix+'-tpl-form-title').textContent='New Template';
+}
+
+async function saveTemplate(prefix, site){
+  var id=document.getElementById(prefix+'-tpl-id').value;
+  var title=document.getElementById(prefix+'-tpl-title').value.trim();
+  var desc=document.getElementById(prefix+'-tpl-desc').value.trim();
+  var category=document.getElementById(prefix+'-tpl-category').value;
+  var subject=document.getElementById(prefix+'-tpl-subject').value.trim();
+  var body=document.getElementById(prefix+'-tpl-body').value.trim();
+  var status=document.getElementById(prefix+'-tpl-status');
+  if(!title || !subject || !body){ status.textContent='Title, subject, and body are all required.'; return; }
+  status.textContent='Saving…';
+  try{
+    var rec={title:title, description:desc, subject:subject, html_body:body, default_category:category||null};
+    var r = id ? await sb.from('email_templates').update(rec).eq('id',id) : await sb.from('email_templates').insert([rec]);
+    if(r.error) throw r.error;
+    status.textContent='Template saved.';
+    resetTemplateForm(prefix);
+    loadTemplates(prefix);
+  }catch(e){ status.textContent='Could not save: '+(e.message||'try again'); }
+}
+
+function editTemplate(id){
+  var found=null, prefix=null;
+  ['m','h'].forEach(function(p){
+    var list=window['__'+p+'templates']||[];
+    var f=list.find(function(t){return t.id===id;});
+    if(f){ found=f; prefix=p; }
+  });
+  if(!found) return;
+  document.getElementById(prefix+'-tpl-id').value=found.id;
+  document.getElementById(prefix+'-tpl-title').value=found.title||'';
+  document.getElementById(prefix+'-tpl-desc').value=found.description||'';
+  document.getElementById(prefix+'-tpl-category').value=found.default_category||'';
+  document.getElementById(prefix+'-tpl-subject').value=found.subject||'';
+  document.getElementById(prefix+'-tpl-body').value=found.html_body||'';
+  document.getElementById(prefix+'-tpl-form-title').textContent='Edit Template';
+  document.getElementById('epane-'+prefix+'-templates').scrollIntoView({behavior:'smooth'});
+}
+
+async function deleteTemplate(id, prefix){
+  if(!confirm('Delete this template permanently?')) return;
+  try{
+    var r=await sb.from('email_templates').delete().eq('id',id);
+    if(r.error) throw r.error;
+    toast('Template deleted.');
+    loadTemplates(prefix);
+  }catch(e){ toast('Delete failed.'); }
+}
+
+/* ===== TEMPLATE SEND MODAL ===== */
+var _tplSendState = { templateId:null, prefix:null, site:null, subscribers:[], selected:new Set() };
+
+async function openTplSendModal(templateId, prefix){
+  var list = window['__'+prefix+'templates']||[];
+  var tpl = list.find(function(t){return t.id===templateId;});
+  if(!tpl) return;
+  var site = prefix==='m' ? 'main' : 'hcwa';
+  _tplSendState = { templateId:templateId, prefix:prefix, site:site, subscribers:[], selected:new Set() };
+  document.getElementById('tplSendTitle').textContent = 'Send: '+tpl.title;
+  document.getElementById('tplSendSubtitle').textContent = 'Choose who should receive this.';
+  document.getElementById('tplSendStatus').textContent = '';
+  document.getElementById('tplRecipientList').innerHTML = 'Loading subscribers…';
+  document.getElementById('tplSendModal').classList.add('open');
+
+  try{
+    var r=await sb.from('subscribers').select('*').eq('unsubscribed',false).order('name',{ascending:true});
+    if(r.error) throw r.error;
+    _tplSendState.subscribers = r.data;
+    var cats={};
+    r.data.forEach(function(x){ var c=x.category||x.interest||'General'; cats[c]=1; });
+    var catSel=document.getElementById('tplSendCategoryFilter');
+    catSel.innerHTML='<option value="">All categories</option>'+Object.keys(cats).sort().map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
+    if(tpl.default_category) catSel.value=tpl.default_category;
+    renderTplRecipients();
+  }catch(e){
+    document.getElementById('tplRecipientList').innerHTML='Could not load subscribers.';
+  }
+}
+
+function renderTplRecipients(){
+  var filterVal = document.getElementById('tplSendCategoryFilter').value;
+  var box = document.getElementById('tplRecipientList');
+  var subs = _tplSendState.subscribers.filter(function(x){
+    var c = x.category || x.interest || 'General';
+    return !filterVal || c === filterVal;
+  });
+  if(!subs.length){ box.innerHTML='<p style="color:var(--slate-2);font-size:.86rem;margin:0">No subscribers match this filter.</p>'; return; }
+  box.innerHTML = subs.map(function(x){
+    var checked = _tplSendState.selected.has(x.email) ? 'checked' : '';
+    return '<label style="display:flex;align-items:center;gap:9px;padding:7px 0;font-size:.86rem;cursor:pointer"><input type="checkbox" data-email="'+esc(x.email)+'" onchange="toggleTplRecipient(this)" '+checked+' style="width:auto">'+esc(x.name||x.email)+' <span style="color:var(--slate-2)">('+esc(x.category||x.interest||'General')+')</span></label>';
+  }).join('');
+}
+function filterTplRecipients(){ renderTplRecipients(); }
+function toggleTplRecipient(cb){
+  if(cb.checked) _tplSendState.selected.add(cb.dataset.email);
+  else _tplSendState.selected.delete(cb.dataset.email);
+}
+function selectAllTplRecipients(state){
+  document.querySelectorAll('#tplRecipientList input[type="checkbox"]').forEach(function(cb){
+    cb.checked = state;
+    if(state) _tplSendState.selected.add(cb.dataset.email);
+    else _tplSendState.selected.delete(cb.dataset.email);
+  });
+}
+function closeTplSendModal(){ document.getElementById('tplSendModal').classList.remove('open'); }
+
+async function confirmSendTemplate(){
+  var emails = Array.from(_tplSendState.selected);
+  var status=document.getElementById('tplSendStatus');
+  if(!emails.length){ status.textContent='Select at least one subscriber first.'; return; }
+  var list = window['__'+_tplSendState.prefix+'templates']||[];
+  var tpl = list.find(function(t){return t.id===_tplSendState.templateId;});
+  if(!confirm('Send "'+tpl.title+'" to '+emails.length+' subscriber(s)?')) return;
+  var secret=needSecret();
+  if(!secret){ status.textContent='Cancelled.'; return; }
+  status.textContent='Sending…';
+  try{
+    var r=await fetch(CAMPAIGN_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+secret},
+      body:JSON.stringify({site:_tplSendState.site, subject:tpl.subject, htmlBody:tpl.html_body, recipients:emails, templateId:tpl.id, sendType:'template'})});
+    var d=await r.json();
+    if(d.ok){
+      status.textContent='Sent to '+d.sent+' subscriber(s).'+(d.failed?' '+d.failed+' failed.':'');
+      loadSentEmails(_tplSendState.prefix);
+      setTimeout(closeTplSendModal, 1800);
+    } else {
+      status.textContent='Failed: '+(d.error||'unknown error');
+      if(r.status===401) CRON_SECRET_FOR_ADMIN='';
+    }
+  }catch(e){ status.textContent='Failed to send.'; }
+}
+
+/* ===== SENT EMAILS LOG ===== */
+async function loadSentEmails(prefix){
+  var box=document.getElementById('list-'+prefix+'-sent');
+  if(!box) return;
+  try{
+    var r=await sb.from('sent_emails').select('*').order('created_at',{ascending:false}).limit(200);
+    if(r.error) throw r.error;
+    if(!r.data.length){box.innerHTML='<div class="empty"><p>No emails sent yet.</p></div>';return;}
+    var typeLabel={manual:'Campaign','ai-auto':'Auto (AI, every 2 days)',template:'Template',campaign:'Campaign'};
+    box.innerHTML=r.data.map(function(e){
+      var out = '<div class="row"><div class="row__body">';
+      out += '<span class="status '+(e.status==='sent'?'status--live':'status--draft')+'">'+(typeLabel[e.send_type]||e.send_type)+(e.status==='failed'?' &middot; Failed':'')+'</span>';
+      out += '<h4>'+esc(e.subject)+'</h4>';
+      out += '<p class="meta">To: '+esc(e.subscriber_name||e.subscriber_email)+' &lt;'+esc(e.subscriber_email)+'&gt; &middot; '+fmtDate(e.created_at)+'</p>';
+      if(e.body_preview) out += '<p class="msg" style="font-size:.82rem;color:var(--slate-2)">'+esc(e.body_preview)+'&hellip;</p>';
+      out += '</div></div>';
+      return out;
+    }).join('');
+  }catch(e){box.innerHTML='<div class="empty"><p>Could not load sent emails. Make sure the sent_emails table exists.</p></div>';}
+}
+
 </script>
+<!-- TEMPLATE SEND MODAL (shared) -->
+<div class="qform" id="tplSendModal">
+  <div class="qform__card" style="max-width:480px">
+    <div class="qform__head">
+      <button class="qform__close" onclick="closeTplSendModal()" aria-label="Close">×</button>
+      <h3 id="tplSendTitle">Send Template</h3>
+      <p id="tplSendSubtitle">Choose who should receive this.</p>
+    </div>
+    <div class="qform__body">
+      <div class="field"><label>Filter by category</label>
+        <select id="tplSendCategoryFilter" onchange="filterTplRecipients()"><option value="">All categories</option></select>
+      </div>
+      <div style="max-height:280px;overflow-y:auto;border:1px solid var(--line-2);border-radius:12px;padding:10px;margin-bottom:14px" id="tplRecipientList"></div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="abtn" onclick="selectAllTplRecipients(true)">Select All Visible</button>
+        <button class="abtn" onclick="selectAllTplRecipients(false)">Clear</button>
+      </div>
+      <button class="btn btn--primary btn--full" onclick="confirmSendTemplate()">Send to Selected</button>
+      <p id="tplSendStatus" style="margin:12px 0 0;font-size:.86rem;color:var(--slate)"></p>
+    </div>
+  </div>
+</div>
+
 </body></html>

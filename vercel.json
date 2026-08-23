@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/generate-article?site=main", "schedule": "0 13 * * *" },
-    { "path": "/api/generate-article?site=hcwa", "schedule": "10 13 * * *" }
+    { "path": "/api/generate-article?site=hcwa", "schedule": "10 13 * * *" },
+    { "path": "/api/send-auto-emails", "schedule": "0 14 */2 * *" }
   ]
 }

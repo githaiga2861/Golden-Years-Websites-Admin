@@ -49,8 +49,13 @@ function buildEmail(cfg, sub, htmlBody, subject) {
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(10,30,60,.08)">
   <tr><td style="background:#041e4f;padding:22px 28px">
-    <div style="color:#ffffff;font-size:19px;font-weight:bold">${esc(cfg.shortName)}</div>
-    <div style="color:#c6a256;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px">Compassionate Care, Dignified Living</div>
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+      <td style="padding-right:12px;vertical-align:middle"><img src="https://goldenyearshomehealthllc.com/images/logo.png" width="40" height="40" alt="${esc(cfg.shortName)} logo" style="display:block;border-radius:8px;background:#ffffff"></td>
+      <td style="vertical-align:middle">
+        <div style="color:#ffffff;font-size:19px;font-weight:bold">${esc(cfg.shortName)}</div>
+        <div style="color:#c6a256;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px">Compassionate Care, Dignified Living</div>
+      </td>
+    </tr></table>
   </td></tr>
   <tr><td style="padding:28px;font-size:15px;line-height:1.65;color:#122236">
     <p style="margin:0 0 16px">Hi ${esc(firstName)},</p>
@@ -80,7 +85,7 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { site, subject, htmlBody, segment, testTo } = req.body || {};
+  const { site, subject, htmlBody, segment, testTo, recipients, templateId, sendType } = req.body || {};
   const cfg = SITES[site];
   if (!cfg) return res.status(400).json({ error: 'Unknown site.' });
   if (!subject || !htmlBody) return res.status(400).json({ error: 'Subject and body are required.' });
@@ -113,21 +118,51 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true, test: true, sentTo: testTo });
     }
 
-    let query = `${cfg.supabaseUrl}/rest/v1/subscribers?unsubscribed=eq.false&select=email,name,interest,unsub_token`;
-    if (segment) query += `&interest=eq.${encodeURIComponent(segment)}`;
-
-    const listRes = await fetch(query, {
-      headers: { apikey: cfg.supabaseKey, Authorization: `Bearer ${cfg.supabaseKey}` }
-    });
-    if (!listRes.ok) throw new Error('Could not load subscriber list.');
-    const subs = await listRes.json();
-    if (!subs.length) return res.status(200).json({ ok: true, sent: 0, message: 'No active subscribers match that segment.' });
+    let subs;
+    if (Array.isArray(recipients) && recipients.length) {
+      // Explicit list — used when sending a saved template to specific subscribers
+      const emailsParam = recipients.map(e => encodeURIComponent(e)).join(',');
+      const r = await fetch(
+        `${cfg.supabaseUrl}/rest/v1/subscribers?unsubscribed=eq.false&email=in.(${emailsParam})&select=email,name,interest,category,unsub_token`,
+        { headers: { apikey: cfg.supabaseKey, Authorization: `Bearer ${cfg.supabaseKey}` } }
+      );
+      if (!r.ok) throw new Error('Could not load the selected recipients.');
+      subs = await r.json();
+    } else {
+      let query = `${cfg.supabaseUrl}/rest/v1/subscribers?unsubscribed=eq.false&select=email,name,interest,category,unsub_token`;
+      if (segment) query += `&category=eq.${encodeURIComponent(segment)}`;
+      const r = await fetch(query, {
+        headers: { apikey: cfg.supabaseKey, Authorization: `Bearer ${cfg.supabaseKey}` }
+      });
+      if (!r.ok) throw new Error('Could not load subscriber list.');
+      subs = await r.json();
+    }
+    if (!subs.length) return res.status(200).json({ ok: true, sent: 0, message: 'No matching active subscribers found.' });
 
     let sent = 0, failed = 0;
+    const preview = String(htmlBody).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+    const logType = sendType || (Array.isArray(recipients) && recipients.length ? 'template' : 'manual');
+
     for (let i = 0; i < subs.length; i += BATCH_SIZE) {
       const batch = subs.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(batch.map(sendOne));
-      results.forEach(r => r.status === 'fulfilled' ? sent++ : (failed++, console.error('Send failed:', r.reason)));
+      const logRows = [];
+      results.forEach((r, idx) => {
+        const sub = batch[idx];
+        if (r.status === 'fulfilled') {
+          sent++;
+          logRows.push({ subscriber_email: sub.email, subscriber_name: sub.name || null, subject, body_preview: preview, send_type: logType, template_id: templateId || null, status: 'sent' });
+        } else {
+          failed++;
+          console.error('Send failed:', r.reason);
+          logRows.push({ subscriber_email: sub.email, subscriber_name: sub.name || null, subject, body_preview: preview, send_type: logType, template_id: templateId || null, status: 'failed' });
+        }
+      });
+      fetch(`${cfg.supabaseUrl}/rest/v1/sent_emails`, {
+        method: 'POST',
+        headers: { apikey: cfg.supabaseKey, Authorization: `Bearer ${cfg.supabaseKey}`, 'content-type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(logRows)
+      }).catch(e => console.error('sent_emails log failed:', e));
       if (i + BATCH_SIZE < subs.length) await sleep(BATCH_PAUSE_MS);
     }
 
