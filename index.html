@@ -476,7 +476,7 @@ let CURRENT_SITE = null;
 let sb = null;
 
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function fmtDate(d){try{return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})+' · '+new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+function fmtDate(d){try{var WA={timeZone:'America/Los_Angeles'};return new Date(d).toLocaleDateString('en-US',Object.assign({year:'numeric',month:'short',day:'numeric'},WA))+' · '+new Date(d).toLocaleTimeString('en-US',Object.assign({hour:'numeric',minute:'2-digit'},WA))+' PT';}catch(e){return '';}}
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 
