@@ -18,7 +18,7 @@ const SITES = {
     name: 'Golden Years Home Care WA',
     shortName: 'Golden Years Home Care',
     origin: 'https://goldenyearshomecarewa.com',
-    fromEmail: 'contact@goldenyearshomehealthllc.com'
+    fromEmail: 'updates@goldenyearshomecarewa.com'
   }
 };
 

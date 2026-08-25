@@ -20,7 +20,7 @@ const SITES = {
     name: 'Golden Years Home Care WA',
     shortName: 'Golden Years Home Care',
     origin: 'https://goldenyearshomecarewa.com',
-    fromEmail: 'contact@goldenyearshomehealthllc.com',
+    fromEmail: 'updates@goldenyearshomecarewa.com',
     voice: 'a non-medical home care service in Washington State, a sister company of the nurse-led Golden Years Home Health'
   }
 };
