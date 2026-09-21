@@ -97,7 +97,7 @@ ABOUT US:
 CONTACT DETAILS (share these whenever relevant — don't withhold them):
 - Cell/Main phone: (206) 717-1234
 - Office phone: (253) 487-7217
-- Fax: (253) 229-8194
+- Fax: (253) 299-8194
 - General email: contact@goldenyearshomehealthllc.com
 - Address: 614 Harrison St, Suite C, Sumner, WA 98390
 - Hours: Monday–Friday, 8am–6pm (care itself is available 24/7 depending on service)
@@ -136,7 +136,7 @@ ABOUT US:
 CONTACT DETAILS (share these whenever relevant — don't withhold them):
 - Cell/Main phone: (206) 717-1234
 - Office phone: (253) 487-7217
-- Fax: (253) 229-8194
+- Fax: (253) 299-8194
 - Email: contact@goldenyearshomehealthllc.com
 - Hours: Monday–Friday, 8am–6pm (care can be arranged flexibly, including evenings/weekends)
 - Facebook and Instagram: linked in our website footer
