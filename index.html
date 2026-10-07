@@ -66,6 +66,15 @@ a{color:var(--teal)}
 .picker__card h3{font-size:1.3rem;margin-bottom:6px}
 .picker__card p{font-size:.9rem;margin-bottom:0}
 .picker__card .tag{display:inline-block;margin-top:14px;font-size:.76rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--mist);padding:5px 14px;border-radius:50px}
+/* ===== Email Marketing card (third option) ===== */
+.picker__inner{max-width:1140px}
+.picker__grid{grid-template-columns:repeat(3,1fr)}
+@media(max-width:980px){.picker__grid{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.picker__grid{grid-template-columns:1fr}}
+a.picker__card{display:block;text-decoration:none;color:inherit}
+.picker__icon{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;box-shadow:0 8px 20px rgba(167,132,47,.3)}
+.picker__icon svg{width:26px;height:26px}
+.picker__card--email .tag{color:var(--gold-deep);background:#f7f0e1}
 
 /* ===== Password gate ===== */
 .gate{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:linear-gradient(160deg,var(--teal-900),var(--teal-700))}
@@ -155,7 +164,7 @@ a{color:var(--teal)}
     <div class="picker__inner">
       <img class="picker__logo" src="/icons/icon-512.png" alt="Golden Years">
       <h1 class="picker__title">Golden Years Admin</h1>
-      <p class="picker__sub">Choose which site you'd like to manage.</p>
+      <p class="picker__sub">Choose which site or tool you'd like to open.</p>
       <div class="picker__grid">
         <div class="picker__card" onclick="selectSite('main')">
           <img src="/icons/icon-512.png" alt="">
@@ -169,6 +178,12 @@ a{color:var(--teal)}
           <p>Non-medical home care &amp; companionship — goldenyearshomecarewa.com</p>
           <span class="tag">Leads &amp; Enquiries</span>
         </div>
+        <a class="picker__card picker__card--email" href="https://githaiga2861.github.io/Golden-Years-Email-Marketing/">
+          <span class="picker__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+          <h3>Email Marketing</h3>
+          <p>Referral outreach to hospitals, rehab, memory care &amp; adult family homes — personalized emails sent through Gmail</p>
+          <span class="tag">Templates · Contacts · Sent log</span>
+        </a>
       </div>
     </div>
   </div>
