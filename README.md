@@ -10,7 +10,7 @@ A single unified, installable PWA admin dashboard for both:
 2. Import the repo into Vercel (vercel.com → Add New → Project → Import Git Repository).
    No build step needed — it's a static site. Leave build settings as default/none.
 3. Vercel will assign a URL like `golden-years-admin-app.vercel.app`. You can add a custom domain later if you want (e.g. `admin.goldenyearshomehealthllc.com`).
-4. Password: `GoldenYears2026` (same as both websites' admin pages — change it by editing the `ADMIN_PW` constant near the top of the `<script>` block in index.html).
+4. Password: `25Goldenyears*` (same as both websites' admin pages — change it by editing the `ADMIN_PW` constant near the top of the `<script>` block in index.html).
 
 ## How it works
 
